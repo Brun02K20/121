@@ -19,6 +19,7 @@ export class Generador {
         const z1 = Math.sqrt(-2.0 * Math.log(rnd1)) * Math.sin(2.0 * Math.PI * rnd2);
         const norm_z0 = this.truncar(media + z0 * desviacion);
         const norm_z1 = this.truncar(media + z1 * desviacion);
+
         if (norm_z0 < norm_z1) {
             return norm_z1
         } else {
