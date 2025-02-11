@@ -29,26 +29,31 @@ export class Estaticas {
     static E_LLEGADA_AUTO_CONT = "Llegada auto continente";
     static E_LLEGADA_CAMION_CONT = "Llegada camion continente";
 
-    static E_LLEGADA_AUTO_ISLA = "Llegada auto isla";
-    static E_LLEGADA_CAMION_ISLA = "Llegada camion isla";
-
     static E_FIN_CARGA_AUTO_F1 = "Fin carga auto F1";
     static E_FIN_CARGA_CAMION_F1 = "Fin carga camion F1";
     static E_FIN_CARGA_AUTO_F2 = "Fin carga auto F2";
     static E_FIN_CARGA_CAMION_F2 = "Fin carga camion F2";
+
+    static E_FIN_MANTENIMIENTO = "Fin mantenimiento";
+    static E_FIN_RECORRIDO_FERRY_1 = "Fin recorrido ferry 1";
+    static E_FIN_RECORRIDO_FERRY_2 = "Fin recorrido ferry 2";
+
+    static E_LLEGADA_AUTO_ISLA = "Llegada auto isla";
+    static E_LLEGADA_CAMION_ISLA = "Llegada camion isla";
+    static E_FUNCIONAMIENTO_FERRYS = "Funcionamiento ferrys";
+    static E_HABILITACION_LLEGADAS_ISLA = "Habilitacion llegadas isla";
+
 
     static E_FIN_DESCARGA_AUTO_F1 = "Fin descarga auto F1";
     static E_FIN_DESCARGA_CAMION_F1 = "Fin descarga camion F1";
     static E_FIN_DESCARGA_AUTO_F2 = "Fin descarga auto F2";
     static E_FIN_DESCARGA_CAMION_F2 = "Fin descarga camion F2";
 
-    static E_FIN_MANTENIMIENTO = "Fin mantenimiento";
 
-    static E_FIN_RECORRIDO_FERRY_1 = "Fin recorrido ferry 1";
-    static E_FIN_RECORRIDO_FERRY_2 = "Fin recorrido ferry 2";
 
-    static E_FUNCIONAMIENTO_FERRYS = "Funcionamiento ferrys";
-    static E_HABILITACION_LLEGADAS_ISLA = "Habilitacion llegadas isla";
+
+
+
     static E_SALIDA_ESTIMADA_F2 = "Salida estimada F2";
 
     static E_CORTE_LLEGADAS_ISLA = "Corte llegadas isla";
