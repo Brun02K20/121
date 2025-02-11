@@ -78,6 +78,9 @@ export class Simulador {
         this.iteracion0.t_mantenimiento = 0;
         this.iteracion0.fin_mantenimiento = 0;
 
+        // chequeo habilitacion para llegadas_isla
+        this.iteracion0.habilitacion_llegadas_isla = 180;
+
         // fin de recorrido para los 2 ferrys
         this.iteracion0.rnd1_fin_recorrido = 0;
         this.iteracion0.rnd2_fin_recorrido = 0;
@@ -151,7 +154,6 @@ export class Simulador {
 
         if (fila_acutal.reloj_mins > 60) {
             if (fila_anterior.ferry_1.capacidad_restante >= 1 && !fila_anterior.ferry_1.mantenimiento) {
-                cliente.ferry_id = 1;
                 if (fila_anterior.ferry_1.localizacion == Estaticas.L_CONTINENTE) {
                     if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE) {
                         fila_acutal.ferry_1.estado = Estaticas.E_CARGANDO
@@ -170,7 +172,6 @@ export class Simulador {
                     }
                 } else {
                     if (fila_anterior.ferry_2.capacidad_restante >= 1 && !fila_anterior.ferry_2.mantenimiento) {
-                        cliente.ferry_id = 2;
                         if (fila_anterior.ferry_2.localizacion == Estaticas.L_CONTINENTE) {
                             if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
                                 fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO
@@ -200,7 +201,6 @@ export class Simulador {
                 }
             } else {
                 if (fila_anterior.ferry_2.capacidad_restante >= 1 && !fila_anterior.ferry_2.mantenimiento) {
-                    cliente.ferry_id = 2;
                     if (fila_anterior.ferry_2.localizacion == Estaticas.L_CONTINENTE) {
                         if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
                             fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO
@@ -256,12 +256,237 @@ export class Simulador {
 
     //  Segundo Tipo de Evento: Llegada de camiones al continente
     llegada_camion_al_continente(fila_anterior) {
+        let fila_acutal = structuredClone(fila_anterior);
 
+        fila_acutal.nroEvento += 1;
+
+        let cliente = new Cliente(Estaticas.T_CAMION, Estaticas.L_CONTINENTE);
+        cliente.id = this.ultimo_clte_id + 1;
+        this.ultimo_clte_id += 1;
+
+        fila_acutal.tipo_evento = `${Estaticas.E_LLEGADA_CAMION_CONT} id ${cliente.id}`;
+        fila_acutal.reloj_mins = fila_anterior.prox_llegada_camiones_cont;
+
+        if (fila_acutal.reloj_mins > 60) {
+            if (fila_anterior.ferry_1.capacidad_restante >= 2 && !fila_anterior.ferry_1.mantenimiento) {
+                if (fila_anterior.ferry_1.localizacion == Estaticas.L_CONTINENTE) {
+                    if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE) {
+                        fila_acutal.ferry_1.estado = Estaticas.E_CARGANDO
+                        fila_acutal.ferry_1.capacidad_restante -= 2;
+                        cliente.estado = Estaticas.E_CARGANDO;
+
+                        // calcular fin de carga
+                        fila_acutal.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                        fila_acutal.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                        fila_acutal.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_acutal.rnd1_fin_carga_camion, fila_acutal.rnd2_fin_carga_camion);
+                        fila_acutal.fin_carga_camion = fila_acutal.t_fin_carga_camion + fila_acutal.reloj_mins;
+                    } else {
+                        fila_acutal.cola_continente += 1;
+                        fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+                        cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+                    }
+                } else {
+                    if (fila_anterior.ferry_2.capacidad_restante >= 2 && !fila_anterior.ferry_2.mantenimiento) {
+                        if (fila_anterior.ferry_2.localizacion == Estaticas.L_CONTINENTE) {
+                            if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
+                                fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO
+                                fila_acutal.ferry_2.capacidad_restante -= 2;
+                                cliente.estado = Estaticas.E_CARGANDO;
+
+                                // calcular fin de carga
+                                fila_acutal.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_acutal.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_acutal.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_acutal.rnd1_fin_carga_camion, fila_acutal.rnd2_fin_carga_camion);
+                                fila_acutal.fin_carga_camion = fila_acutal.t_fin_carga_camion + fila_acutal.reloj_mins;
+                            } else {
+                                fila_acutal.cola_continente += 1;
+                                fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+                                cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+                            }
+                        } else {
+                            fila_acutal.cola_continente += 1;
+                            fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+                            cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+                        }
+                    } else {
+                        fila_acutal.cola_continente += 1;
+                        fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+                        cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+                    }
+                }
+            } else {
+                if (fila_anterior.ferry_2.capacidad_restante >= 2 && !fila_anterior.ferry_2.mantenimiento) {
+                    if (fila_anterior.ferry_2.localizacion == Estaticas.L_CONTINENTE) {
+                        if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
+                            fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO
+                            fila_acutal.ferry_2.capacidad_restante -= 2;
+                            cliente.estado = Estaticas.E_CARGANDO;
+
+                            // calcular fin de carga
+                            fila_acutal.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                            fila_acutal.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                            fila_acutal.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_acutal.rnd1_fin_carga_camion, fila_acutal.rnd2_fin_carga_camion);
+                            fila_acutal.fin_carga_camion = fila_acutal.t_fin_carga_camion + fila_acutal.reloj_mins;
+                        } else {
+                            fila_acutal.cola_continente += 1;
+                            fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+                            cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+                        }
+                    } else {
+                        fila_acutal.cola_continente += 1;
+                        fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+                        cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+                    }
+                } else {
+                    fila_acutal.cola_continente += 1;
+                    fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+                    cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+                }
+            }
+        } else {
+            fila_acutal.cola_continente += 1;
+            fila_acutal.cola_maxima_cont = Math.max(fila_acutal.cola_continente, fila_anterior.cola_maxima_cont);
+            cliente.estado = Estaticas.E_ESPERANDO_CARGA;
+        }
+
+        fila_acutal.clientes.push(cliente);
+
+        // calcular proxima llegada de auto
+        if (fila_acutal.reloj_mins > 300) {
+            fila_acutal.rnd1_llegada_camiones_cont = this.generador.generarNumeroAleatorio();
+            fila_acutal.rnd2_llegada_camiones_cont = this.generador.generarNumeroAleatorio();
+            fila_acutal.t_llegada_camiones_cont = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_llegada_camion_cont_tarde, SParametros.getInstance().desviacion_llegada_camion_cont_tarde, fila_acutal.rnd1_llegada_camiones_cont, fila_acutal.rnd2_llegada_camiones_cont);
+            fila_acutal.prox_llegada_camiones_cont = fila_acutal.t_llegada_camiones_cont + fila_acutal.reloj_mins;
+        } else {
+            fila_acutal.rnd1_llegada_camiones_cont = this.generador.generarNumeroAleatorio();
+            fila_acutal.rnd2_llegada_camiones_cont = this.generador.generarNumeroAleatorio();
+            fila_acutal.t_llegada_camiones_cont = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_llegada_camion_cont_manana, SParametros.getInstance().desviacion_llegada_camion_cont_manana, fila_acutal.rnd1_llegada_camiones_cont, fila_acutal.rnd2_llegada_camiones_cont);
+            fila_acutal.prox_llegada_camiones_cont = fila_acutal.t_llegada_camiones_cont + fila_acutal.reloj_mins;
+        }
+
+        this.array.push(fila_acutal);
+        this.array_a_mostrar.push(fila_acutal);
+        return fila_acutal
     }
 
     // 3er tipo de evento: Funcionamiento de Ferrys: 
     funcionamiento_ferrys(fila_anterior) {
+        let fila_acutal = structuredClone(fila_anterior);
 
+        fila_acutal.nroEvento += 1;
+        fila_acutal.tipo_evento = Estaticas.E_FUNCIONAMIENTO_FERRYS;
+        fila_acutal.reloj_mins = fila_anterior.func_ferrys;
+        fila_acutal.func_ferrys = 0;
+
+        // Aca el ferry 1 puede estar o libre o en mantenimiento (que pasa cada 5 dias durante 300mins y no puede estar cargando)
+        if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE) {
+            // en caso de estar libre, busco al cliente que esta esperando a ser cargado
+            let cliente = this.buscar_auto_a_cargar_en_continente(fila_anterior);
+            if (cliente) {
+                if (cliente.tipo == Estaticas.T_CAMION) {
+                    if (fila_anterior.ferry_1.capacidad_restante >= 2) {
+                        fila_acutal.ferry_1.estado = Estaticas.E_CARGANDO;
+                        fila_acutal.ferry_1.capacidad_restante -= 2;
+                        fila_acutal.cola_continente -= 1;
+                        fila_acutal.clientes.find(clte => clte.id == cliente.id).estado = Estaticas.E_CARGANDO;
+                        fila_acutal.clientes.find(clte => clte.id == cliente.id).ferry_id = 1;
+
+                        // calcular fin de carga
+                        fila_acutal.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                        fila_acutal.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                        fila_acutal.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_acutal.rnd1_fin_carga_camion, fila_acutal.rnd2_fin_carga_camion);
+                        fila_acutal.fin_carga_camion = fila_acutal.t_fin_carga_camion + fila_acutal.reloj_mins;
+                    } else {
+                        if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
+                            if (fila_anterior.ferry_2.capacidad_restante >= 2) {
+                                fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO;
+                                fila_acutal.ferry_2.capacidad_restante -= 2;
+                                fila_acutal.cola_continente -= 1;
+                                fila_acutal.clientes.find(clte => clte.id == cliente.id).estado = Estaticas.E_CARGANDO;
+                                fila_acutal.clientes.find(clte => clte.id == cliente.id).ferry_id = 2;
+
+                                // calcular fin de carga
+                                fila_acutal.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_acutal.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_acutal.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_acutal.rnd1_fin_carga_camion, fila_acutal.rnd2_fin_carga_camion);
+                                fila_acutal.fin_carga_camion = fila_acutal.t_fin_carga_camion + fila_acutal.reloj_mins;
+                            }
+                        }
+                    }
+                } else {
+                    if (fila_anterior.ferry_1.capacidad_restante >= 1) {
+                        fila_acutal.ferry_1.estado = Estaticas.E_CARGANDO;
+                        fila_acutal.ferry_1.capacidad_restante -= 1;
+                        fila_acutal.cola_continente -= 1;
+                        fila_acutal.clientes.find(clte => clte.id == cliente.id).estado = Estaticas.E_CARGANDO;
+                        fila_acutal.clientes.find(clte => clte.id == cliente.id).ferry_id = 1;
+
+                        // calcular fin de carga
+                        fila_acutal.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                        fila_acutal.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                        fila_acutal.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_acutal.rnd1_fin_carga_auto, fila_acutal.rnd2_fin_carga_auto);
+                        fila_acutal.fin_carga_auto = fila_acutal.t_fin_carga_auto + fila_acutal.reloj_mins;
+                    } else {
+                        if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
+                            if (fila_anterior.ferry_2.capacidad_restante >= 1) {
+                                fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO;
+                                fila_acutal.ferry_2.capacidad_restante -= 1;
+                                fila_acutal.cola_continente -= 1;
+                                fila_acutal.clientes.find(clte => clte.id == cliente.id).estado = Estaticas.E_CARGANDO;
+                                fila_acutal.clientes.find(clte => clte.id == cliente.id).ferry_id = 2;
+
+                                // calcular fin de carga
+                                fila_acutal.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_acutal.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_acutal.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_acutal.rnd1_fin_carga_auto, fila_acutal.rnd2_fin_carga_auto);
+                                fila_acutal.fin_carga_auto = fila_acutal.t_fin_carga_auto + fila_acutal.reloj_mins;
+                            }
+                        }
+                    }
+                }
+            }
+
+        } else {
+            if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
+                // en caso de estar: 
+                let cliente = this.buscar_auto_a_cargar_en_continente(fila_anterior);
+                if (cliente) {
+                    if (cliente.tipo == Estaticas.T_CAMION) {
+                        if (fila_anterior.ferry_2.capacidad_restante >= 2) {
+                            fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO;
+                            fila_acutal.ferry_2.capacidad_restante -= 2;
+                            fila_acutal.cola_continente -= 1;
+                            fila_acutal.clientes.find(clte => clte.id == cliente.id).estado = Estaticas.E_CARGANDO;
+                            fila_acutal.clientes.find(clte => clte.id == cliente.id).ferry_id = 2;
+
+                            // calcular fin de carga
+                            fila_acutal.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                            fila_acutal.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                            fila_acutal.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_acutal.rnd1_fin_carga_camion, fila_acutal.rnd2_fin_carga_camion);
+                            fila_acutal.fin_carga_camion = fila_acutal.t_fin_carga_camion + fila_acutal.reloj_mins;
+                        }
+                    } else {
+                        if (fila_anterior.ferry_2.capacidad_restante >= 1) {
+                            fila_acutal.ferry_2.estado = Estaticas.E_CARGANDO;
+                            fila_acutal.ferry_2.capacidad_restante -= 1;
+                            fila_acutal.cola_continente -= 1;
+                            fila_acutal.clientes.find(clte => clte.id == cliente.id).estado = Estaticas.E_CARGANDO;
+                            fila_acutal.clientes.find(clte => clte.id == cliente.id).ferry_id = 2;
+
+                            // calcular fin de carga
+                            fila_acutal.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                            fila_acutal.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                            fila_acutal.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_acutal.rnd1_fin_carga_auto, fila_acutal.rnd2_fin_carga_auto);
+                            fila_acutal.fin_carga_auto = fila_acutal.t_fin_carga_auto + fila_acutal.reloj_mins;
+                        }
+                    }
+                }
+            }
+        }
+
+        this.array.push(fila_acutal);
+        this.array_a_mostrar.push(fila_acutal);
+        return fila_acutal
     }
 
     // 4to tipo de evento: Fin de carga de auto 
@@ -308,10 +533,15 @@ export class Simulador {
 
     }
 
+    // 13er tipo de evento: Habilitacion de llegadas a la isla
+    habilitar_llegadas_isla(fila_anterior) {
+
+    }
+
     simular() {
         try {
             let iteracion = 0
-            while (iteracion < 2) {
+            while (iteracion < 7) {
                 iteracion += 1;
                 let proximo_evento = this.determinar_proximo_evento(this.array[this.array.length - 1]);
                 console.log(proximo_evento);
@@ -321,9 +551,20 @@ export class Simulador {
                     case Estaticas.E_LLEGADA_AUTO_CONT:
                         this.llegada_auto_al_continente(this.array[this.array.length - 1]);
                         break;
+                    case Estaticas.E_LLEGADA_CAMION_CONT:
+                        this.llegada_camion_al_continente(this.array[this.array.length - 1]);
+                        break;
+                    case Estaticas.E_FUNCIONAMIENTO_FERRYS:
+                        this.funcionamiento_ferrys(this.array[this.array.length - 1]);
+                        break;
                     default:
                         console.log("No hay eventos pendientes");
                         break;
+                }
+
+                // si el array tiene mas de 2 elementos, eliminar el mas antiguo
+                if (this.array.length > 2) {
+                    this.array.shift();
                 }
             }
         } catch (error) {
@@ -331,16 +572,10 @@ export class Simulador {
         }
     }
 
-    buscar_auto_a_cargar_de_ferry1(fila_anterior) {
-        // buscar el primer auto o camion que este esperando a ser cargado en el ferry 1
-        let cliente = fila_anterior.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+    // auto puedo ser auto o camion
+    buscar_auto_a_cargar_en_continente(fila_anterior) {
+        let cliente = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.localizacion == Estaticas.L_CONTINENTE);
         return cliente;
-    }
-
-    buscar_auto_a_cargar_de_ferry2(fila_anterior) {
-        // buscar el primer auto o camion que este esperando a ser cargado en el ferry 2
-        let cliente = fila_anterior.clientes.find(clte => clte.ferry_id == 2 && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-        return cliente
     }
 
     determinar_proximo_evento(fila_anterior) {
@@ -350,78 +585,29 @@ export class Simulador {
         }
 
         let valores = [
-            fila_anterior.prox_llegada_autos_cont,
-            fila_anterior.prox_llegada_camiones_cont,
-            fila_anterior.fin_carga_auto,
-            fila_anterior.fin_carga_camion,
-            fila_anterior.fin_descarga_auto,
-            fila_anterior.fin_descarga_camion,
-            fila_anterior.fin_mantenimiento,
-            fila_anterior.fin_recorrido_ferry_1,
-            fila_anterior.fin_recorrido_ferry_2,
-            fila_anterior.prox_llegada_autos_isla,
-            fila_anterior.prox_llegada_camiones_isla,
-            fila_anterior.func_ferrys
+            { tipo: Estaticas.E_LLEGADA_AUTO_CONT, valor: fila_anterior.prox_llegada_autos_cont },
+            { tipo: Estaticas.E_LLEGADA_CAMION_CONT, valor: fila_anterior.prox_llegada_camiones_cont },
+            { tipo: Estaticas.E_FIN_CARGA_AUTO, valor: fila_anterior.fin_carga_auto },
+            { tipo: Estaticas.E_FIN_CARGA_CAMION, valor: fila_anterior.fin_carga_camion },
+            { tipo: Estaticas.E_FIN_DESCARGA_AUTO, valor: fila_anterior.fin_descarga_auto },
+            { tipo: Estaticas.E_FIN_DESCARGA_CAMION, valor: fila_anterior.fin_descarga_camion },
+            { tipo: Estaticas.E_FIN_MANTENIMIENTO, valor: fila_anterior.fin_mantenimiento },
+            { tipo: Estaticas.E_FIN_RECORRIDO_FERRY_1, valor: fila_anterior.fin_recorrido_ferry_1 },
+            { tipo: Estaticas.E_FIN_RECORRIDO_FERRY_2, valor: fila_anterior.fin_recorrido_ferry_2 },
+            { tipo: Estaticas.E_LLEGADA_AUTO_ISLA, valor: fila_anterior.prox_llegada_autos_isla },
+            { tipo: Estaticas.E_LLEGADA_CAMION_ISLA, valor: fila_anterior.prox_llegada_camiones_isla },
+            { tipo: Estaticas.E_FUNCIONAMIENTO_FERRYS, valor: fila_anterior.func_ferrys },
+            { tipo: Estaticas.E_HABILITACION_LLEGADAS_ISLA, valor: fila_anterior.habilitacion_llegadas_isla }
         ]
 
         // filtrar todos los valores que sean mayores a 0
-        valores = valores.filter(val => val > 0);
+        valores = valores.filter(val => val.valor > 0);
 
-        let minimo = Math.min(...valores);
-        let index = valores.indexOf(minimo);
+        let minimo = Math.min(...valores.map(val => val.valor));
+        let proximo = valores.find(val => val.valor === minimo);
 
-        switch (index) {
-            case 0:
-                proximo_evento.tipo = Estaticas.E_LLEGADA_AUTO_CONT;
-                proximo_evento.valor = minimo;
-                break;
-            case 1:
-                proximo_evento.tipo = Estaticas.E_LLEGADA_CAMION_CONT;
-                proximo_evento.valor = minimo;
-                break;
-            case 2:
-                proximo_evento.tipo = Estaticas.E_FIN_CARGA_AUTO;
-                proximo_evento.valor = minimo;
-                break;
-            case 3:
-                proximo_evento.tipo = Estaticas.E_FIN_CARGA_CAMION;
-                proximo_evento.valor = minimo;
-                break;
-            case 4:
-                proximo_evento.tipo = Estaticas.E_FIN_DESCARGA_AUTO;
-                proximo_evento.valor = minimo;
-                break;
-            case 5:
-                proximo_evento.tipo = Estaticas.E_FIN_DESCARGA_CAMION;
-                proximo_evento.valor = minimo;
-                break;
-            case 6:
-                proximo_evento.tipo = Estaticas.E_FIN_MANTENIMIENTO;
-                proximo_evento.valor = minimo;
-                break;
-            case 7:
-                proximo_evento.tipo = Estaticas.E_FIN_RECORRIDO_FERRY_1;
-                proximo_evento.valor = minimo;
-                break;
-            case 8:
-                proximo_evento.tipo = Estaticas.E_FIN_RECORRIDO_FERRY_2;
-                proximo_evento.valor = minimo;
-                break;
-            case 9:
-                proximo_evento.tipo = Estaticas.E_LLEGADA_AUTO_ISLA;
-                proximo_evento.valor = minimo;
-                break;
-            case 10:
-                proximo_evento.tipo = Estaticas.E_LLEGADA_CAMION_ISLA;
-                proximo_evento.valor = minimo;
-                break;
-            case 11:
-                proximo_evento.tipo = Estaticas.E_FUNCIONAMIENTO_FERRYS;
-                proximo_evento.valor = minimo;
-                break;
-            default:
-                break;
-        }
+        proximo_evento.tipo = proximo.tipo;
+        proximo_evento.valor = proximo.valor;
 
         return proximo_evento;
     }

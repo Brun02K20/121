@@ -37,4 +37,5 @@ export class Estaticas {
     static E_FIN_RECORRIDO_FERRY_1 = "Fin recorrido ferry 1";
     static E_FIN_RECORRIDO_FERRY_2 = "Fin recorrido ferry 2";
     static E_FUNCIONAMIENTO_FERRYS = "Funcionamiento ferrys";
+    static E_HABILITACION_LLEGADAS_ISLA = "Habilitacion llegadas isla";
 }
