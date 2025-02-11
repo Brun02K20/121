@@ -1,5 +1,6 @@
 export class Cliente {
     constructor(tipo, localizacion) {
+        this.id = null;
         this.ferry_id = null;
         this.estado = "Creado";
         this.tipo = tipo
