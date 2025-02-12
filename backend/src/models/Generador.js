@@ -10,7 +10,7 @@ export class Generador {
     }
 
     generarNumeroAleatorio() {
-        return this.truncar(Math.random());
+        return Math.random();
     }
 
     // este seria el tiempo de duracion de la actividad. Aplica para todas las actividades de los eventos posibles
