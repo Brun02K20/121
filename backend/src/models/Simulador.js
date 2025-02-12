@@ -3573,7 +3573,7 @@ export class Simulador {
     simular() {
         try {
             let iteracion = 0
-            while (iteracion < 40) {
+            while (iteracion < 80) {
                 iteracion += 1;
                 let proximo_evento = this.determinar_proximo_evento(this.array[this.array.length - 1]);
                 console.log(proximo_evento);
@@ -3610,8 +3610,14 @@ export class Simulador {
                     case Estaticas.E_FIN_DESCARGA_AUTO_F1:
                         this.fin_descarga_auto_ferry1(this.array[this.array.length - 1]);
                         break;
+                    case Estaticas.E_FIN_DESCARGA_AUTO_F2:
+                        this.fin_descarga_auto_ferry2(this.array[this.array.length - 1]);
+                        break;
                     case Estaticas.E_FIN_DESCARGA_CAMION_F1:
                         this.fin_descarga_camion_ferry1(this.array[this.array.length - 1]);
+                        break;
+                    case Estaticas.E_FIN_DESCARGA_CAMION_F2:
+                        this.fin_descarga_camion_ferry2(this.array[this.array.length - 1]);
                         break;
                     case Estaticas.E_HABILITACION_LLEGADAS_ISLA:
                         this.habilitar_llegadas_isla(this.array[this.array.length - 1]);
