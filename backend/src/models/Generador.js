@@ -15,6 +15,13 @@ export class Generador {
 
     // este seria el tiempo de duracion de la actividad. Aplica para todas las actividades de los eventos posibles
     generar_tiempo_box_muller(media, desviacion, rnd1, rnd2) {
+
+        console.log("Parametros: ")
+        console.log("Media: " + media)
+        console.log("Desviacion: " + desviacion)
+        console.log("Rnd1: " + rnd1)
+        console.log("Rnd2: " + rnd2)
+
         const z0 = Math.sqrt(-2.0 * Math.log(rnd1)) * Math.cos(2.0 * Math.PI * rnd2);
         const z1 = Math.sqrt(-2.0 * Math.log(rnd1)) * Math.sin(2.0 * Math.PI * rnd2);
         const norm_z0 = this.truncar(media + z0 * desviacion);

@@ -5,6 +5,7 @@ export class Estaticas {
     static E_DESCARGANDO = "Descargando";
     static E_MANTENIMIENTO = "Mantenimiento";
     static E_VIAJANDO = "Viajando";
+    static E_FIN_ACTIVIDAD_DIA = "Fin actividad dia";
 
     // Estados posibles de los clientes (autos y camiones)
     static E_CREADO = "Creado";

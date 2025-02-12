@@ -1,10 +1,11 @@
 export class Cliente {
-    constructor(tipo, localizacion, id) {
+    constructor(tipo, localizacion, id, destino) {
         this.id = id;
         this.ferry_id = null;
         this.estado = "Creado";
         this.tipo = tipo
         this.localizacion = localizacion
+        this.destino = destino
     }
 
     // Métodos getter y setter
