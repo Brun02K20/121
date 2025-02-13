@@ -53,4 +53,5 @@ export class Estaticas {
     static E_SALIDA_ESTIMADA_F2 = "Salida estimada F2";
     static E_CORTE_LLEGADAS_ISLA = "Corte llegadas isla";
     static E_CORTE_LLEGADAS_CONT = "Corte llegadas continente";
+    static E_CHEQUEO_FIN_DIA = "Chequeo fin dia";
 }
