@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState } from "react";
 import { Button, Table } from "react-bootstrap";
 import { ClientTable } from "../components/ClientTable";
@@ -27,130 +28,138 @@ const GeneralTable = ({ tabla }) => {
       <Table responsive striped bordered hover className="table-auto-width">
         <thead>
           <tr>
-            <th>i</th>
-            <th>Tipo Ev</th>
-            <th>N° dia</th>
-            <th>Min</th>
-            <th>Func Ferrys</th>
+            <th rowSpan={2}>i</th>
+            <th rowSpan={2}>Tipo Ev</th>
+            <th rowSpan={2}>N° dia</th>
+            <th rowSpan={2}>Min</th>
+            <th rowSpan={2}>Func Ferrys</th>
 
-            {/* Llegada autos continente */}
+            <th colSpan={4}>Llegada autos continente</th>
+            <th colSpan={4}>Llegada camiones continente</th>
+            <th colSpan={4}>Llegada autos isla</th>
+            <th colSpan={4}>Llegada camiones isla</th>
+
+            <th colSpan={5}>Fin carga auto (i=1,2)</th>
+            <th colSpan={5}>Fin carga camión (i=1,2)</th>
+
+            <th colSpan={5}>Fin descarga auto (i=1,2)</th>
+            <th colSpan={5}>Fin descarga camión (i=1,2)</th>
+            <th colSpan={5}>Fin recorrido (i=1,2)</th>
+
+            <th colSpan={2}>Mantenimiento</th>
+            <th colSpan={5}>Habilitaciones y cortes</th>
+
+            <th colSpan={5}>Información del ferry 1</th>
+            <th colSpan={5}>Información del ferry 2</th>
+
+            <th colSpan={3}>Información adicional ferrys</th>
+
+            <th colSpan={2}>Colas</th>
+
+            <th colSpan={2}>Colas máximas</th>
+
+            <th colSpan={4}>Promedio de autos por día</th>
+            <th colSpan={4}>Promedio de camiones por día</th>
+
+            <th colSpan={2}>Vehículos en espera</th>
+            <th rowSpan={2}>Clientes</th>
+          </tr>
+
+          <tr>
+            {/* Subencabezados */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. llegada</th>
             <th>T. prox llegada</th>
 
-            {/* Llegada camiones continente */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. llegada</th>
             <th>T. prox llegada</th>
 
-            {/* Llegada autos isla */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. llegada</th>
             <th>T. prox llegada</th>
 
-            {/* Llegada camiones isla */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. llegada</th>
             <th>T. prox llegada</th>
 
-            {/* Fin carga auto(i);i=1,2 */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. carga</th>
             <th>HF carga(1)</th>
             <th>HF carga(2)</th>
 
-            {/* Fin carga camion(i);i=1,2 */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. carga</th>
             <th>HF carga(1)</th>
             <th>HF carga(2)</th>
 
-            {/* Fin descarga auto(i);i=1,2 */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. descarga</th>
             <th>HF descarga(1)</th>
             <th>HF descarga(2)</th>
 
-            {/* Fin descarga camion(i);i=1,2 */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. descarga</th>
             <th>HF descarga(1)</th>
             <th>HF descarga(2)</th>
 
-            {/* Mantenimiento */}
-            <th>T. mant</th>
-            <th>HF mant</th>
-
-            {/* Habilitaciones y cortes */}
-            <th>Hab llegadas isla</th>
-            <th>Corte llegadas cont</th>
-            <th>Corte llegadas isla</th>
-            <th>Fin act dia F1</th>
-            <th>Fin act dia F2</th>
-
-            {/* Fin recorrido(i);i=1,2 */}
             <th>RND1</th>
             <th>RND2</th>
             <th>T. recorr</th>
             <th>HF recorr(1)</th>
             <th>HF recorr(2)</th>
 
-            {/* Informacion del ferry 1 */}
+            <th>T. mant</th>
+            <th>HF mant</th>
+
+            <th>Hab llegadas isla</th>
+            <th>Corte llegadas cont</th>
+            <th>Corte llegadas isla</th>
+            <th>Fin act dia F1</th>
+            <th>Fin act dia F2</th>
+
             <th>Estado</th>
             <th>Mantenimiento</th>
             <th>Cap rest</th>
             <th>Loc act</th>
             <th>Ult loc terr</th>
 
-            {/* Informacion del ferry 2 */}
             <th>Estado</th>
             <th>Mantenimiento</th>
             <th>Cap rest</th>
             <th>Loc act</th>
             <th>Ult loc terr</th>
 
-            {/* Informacion adicional pertinente a ambos ferrys */}
             <th>Ult mant</th>
             <th>H salida F1</th>
             <th>H salida estimada F2</th>
 
-            {/* Colas */}
             <th>Cola cont</th>
             <th>Cola isla</th>
 
-            {/* Estadisticas */}
-            {/* A: Colas maximas */}
             <th>Cola max cont</th>
             <th>Cola max isla</th>
 
-            {/* B: Cantidad promedio que pasan por dia en cada sentido */}
-            {/* Autos */}
             <th>Isla a cont</th>
             <th>cont a isla</th>
             <th>Prom (1)</th>
             <th>Prom (2)</th>
 
-            {/* Camiones */}
             <th>Isla a cont</th>
             <th>Cont a Isla</th>
             <th>Prom (1)</th>
             <th>Prom (2)</th>
 
-            {/* C: Cantidad de vehiculos en gral que esperan a pasar de un lado al otro */}
             <th>Acum</th>
             <th>Prom</th>
-
-            <th>Clientes</th>
-
-            {/* Aca todos los encabezados */}
           </tr>
         </thead>
 
@@ -207,6 +216,12 @@ const GeneralTable = ({ tabla }) => {
               <td>{round(fila.fin_descarga_camion_f1) || ""}</td>
               <td>{round(fila.fin_descarga_camion_f2) || ""}</td>
 
+              <td>{round(fila.rnd1_fin_recorrido) || ""}</td>
+              <td>{round(fila.rnd2_fin_recorrido) || ""}</td>
+              <td>{round(fila.t_fin_recorrido) || ""}</td>
+              <td>{round(fila.fin_recorrido_ferry_1) || ""}</td>
+              <td>{round(fila.fin_recorrido_ferry_2) || ""}</td>
+
               <td>{fila.t_mantenimiento || ""}</td>
               <td>{fila.fin_mantenimiento || ""}</td>
 
@@ -215,12 +230,6 @@ const GeneralTable = ({ tabla }) => {
               <td>{fila.corte_llegadas_cont || ""}</td>
               <td>{fila.fin_act_f1 === true ? "SI" : "NO"}</td>
               <td>{fila.fin_act_f2 === true ? "SI" : "NO"}</td>
-
-              <td>{round(fila.rnd1_fin_recorrido) || ""}</td>
-              <td>{round(fila.rnd2_fin_recorrido) || ""}</td>
-              <td>{round(fila.t_fin_recorrido) || ""}</td>
-              <td>{round(fila.fin_recorrido_ferry_1) || ""}</td>
-              <td>{round(fila.fin_recorrido_ferry_2) || ""}</td>
 
               <td>{fila.ferry_1.estado}</td>
               <td>{fila.ferry_1.mantenimiento === true ? "SI" : "NO"}</td>
