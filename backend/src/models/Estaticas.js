@@ -50,13 +50,7 @@ export class Estaticas {
     static E_FIN_DESCARGA_AUTO_F2 = "Fin descarga auto F2";
     static E_FIN_DESCARGA_CAMION_F2 = "Fin descarga camion F2";
 
-
-
-
-
-
     static E_SALIDA_ESTIMADA_F2 = "Salida estimada F2";
-
     static E_CORTE_LLEGADAS_ISLA = "Corte llegadas isla";
     static E_CORTE_LLEGADAS_CONT = "Corte llegadas continente";
 }

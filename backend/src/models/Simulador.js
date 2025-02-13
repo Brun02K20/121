@@ -159,6 +159,9 @@ export class Simulador {
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.prox_llegada_autos_cont;
 
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
         // paso 1.5: resetear los valores pertinentes a la llegada de autos al continente
         fila_actual.rnd1_llegada_autos_cont = 0;
         fila_actual.rnd2_llegada_autos_cont = 0;
@@ -173,14 +176,61 @@ export class Simulador {
         if (fila_actual.reloj_mins > 60) {
             // si ya pasaron 60 mins, es que abrieron los ferrys, sin embargo, debemos saber si hay otros autos esperando carga
             if (fila_anterior.cola_continente >= 1) {
-                // si hay autos esperando, el nuevo auto se va a la cola continente
-                fila_actual.cola_continente += 1;
-                auto.estado = Estaticas.E_ESPERANDO_CARGA;
+                // buscar todos los autos en la cola continente
+                let autos_en_cola = fila_anterior.clientes.filter(c => c.estado == Estaticas.E_ESPERANDO_CARGA && c.localizacion == Estaticas.L_CONTINENTE);
 
-                if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
-                    fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                // preguntar si todos esos autos en cola son camiones
+                let son_todos_camiones = autos_en_cola.every(c => c.tipo == Estaticas.T_CAMION);
+
+                // si son todos camiones
+                if (son_todos_camiones) {
+                    // si son todos camiones, debo preguntar si hay capacidad >= 1 en el ferry 1
+                    if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE && fila_anterior.ferry_1.localizacion == Estaticas.L_CONTINENTE && fila_anterior.ferry_1.capacidad_restante >= 1) {
+                        // si hay capacidad en el ferry 1, el auto se sube al ferry 1
+                        fila_actual.ferry_1.capacidad_restante -= 1;
+                        auto.ferry_id = 1;
+                        auto.estado = Estaticas.E_SIENDO_CARGADO;
+                        fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+
+                        // calcular el tiempo de carga del auto en el ferry 1
+                        fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                        fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                    } else {
+                        // pregunto si hay capacidad en el ferry 2
+                        if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE && fila_anterior.ferry_2.localizacion == Estaticas.L_CONTINENTE && fila_anterior.ferry_2.capacidad_restante >= 1) {
+                            // si hay capacidad en el ferry 1, el auto se sube al ferry 2
+                            fila_actual.ferry_2.capacidad_restante -= 1;
+                            auto.ferry_id = 2;
+                            auto.estado = Estaticas.E_SIENDO_CARGADO;
+                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+
+                            // calcular el tiempo de carga del auto en el ferry 2
+                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                            fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+                        } else {
+                            // no hay capacidad en ningun ferry, por ende, se va a la cola
+                            fila_actual.cola_continente += 1;
+                            auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                            if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                                fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                            }
+                        }
+                    }
+                } else {
+                    // si no son todos camiones, directamente a la cola
+                    fila_actual.cola_continente += 1;
+                    auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                    if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                        fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                    }
                 }
-
             } else {
                 // si no hay autos esperando, debo saber si hay ferrys disponibles en el continente, empezando por el ferry 1
                 if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE && fila_anterior.ferry_1.localizacion == Estaticas.L_CONTINENTE) {
@@ -217,11 +267,19 @@ export class Simulador {
                                 // si no hay espacio en el ferry 2, el auto va a la cola continente
                                 fila_actual.cola_continente += 1;
                                 auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                                if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                                    fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                                }
                             }
                         } else {
                             // si el ferry 2 no esta libre, el auto va a la cola continente
                             fila_actual.cola_continente += 1;
                             auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                            if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                                fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                            }
                         }
                     }
                 } else {
@@ -244,11 +302,19 @@ export class Simulador {
                             // si no hay espacio en el ferry 2, el auto va a la cola continente
                             fila_actual.cola_continente += 1;
                             auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                            if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                                fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                            }
                         }
                     } else {
                         // si el ferry 2 no esta libre, el auto va a la cola continente
                         fila_actual.cola_continente += 1;
                         auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                        if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                            fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                        }
                     }
                 }
             }
@@ -256,6 +322,10 @@ export class Simulador {
             // si no han pasado 60 mins es porque los ferrys no estan disponibles
             fila_actual.cola_continente += 1;
             auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+            if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+            }
         }
 
         // Paso 4: Agregar el auto a la lista de clientes
@@ -288,6 +358,9 @@ export class Simulador {
         fila_actual.tipo_evento = `Llegada camion continente id: ${this.ultimo_clte_id + 1}`;
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.prox_llegada_camiones_cont;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la llegada de camiones al continente
         fila_actual.rnd1_llegada_camiones_cont = 0;
@@ -346,11 +419,19 @@ export class Simulador {
                                 // si no hay espacio en el ferry 2, el camion va a la cola continente
                                 fila_actual.cola_continente += 1;
                                 camion.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                                if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                                    fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                                }
                             }
                         } else {
                             // si el ferry 2 no esta libre, el camion va a la cola continente
                             fila_actual.cola_continente += 1;
                             camion.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                            if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                                fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                            }
                         }
                     }
                 } else {
@@ -373,11 +454,19 @@ export class Simulador {
                             // si no hay espacio en el ferry 2, el camion va a la cola continente
                             fila_actual.cola_continente += 1;
                             camion.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                            if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                                fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                            }
                         }
                     } else {
                         // si el ferry 2 no esta libre, el camion va a la cola continente
                         fila_actual.cola_continente += 1;
                         camion.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                        if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                            fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+                        }
                     }
                 }
             }
@@ -385,6 +474,10 @@ export class Simulador {
             // si no han pasado 60 mins es porque los ferrys no estan disponibles
             fila_actual.cola_continente += 1;
             camion.estado = Estaticas.E_ESPERANDO_CARGA;
+
+            if (fila_actual.cola_continente > fila_anterior.cola_maxima_cont) {
+                fila_actual.cola_maxima_cont = fila_actual.cola_continente;
+            }
         }
 
         // Paso 4: Agregar el auto a la lista de clientes
@@ -418,6 +511,9 @@ export class Simulador {
         fila_acutal.reloj_dias = fila_anterior.reloj_dias;
         fila_acutal.reloj_mins = fila_anterior.func_ferrys;
         fila_acutal.func_ferrys = 0;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_acutal);
 
         // en esta parte del proceso, los ferrys 1 y 2 estan en el continente siempre. 
         // tener en cuenta que puede haber un ferry en mantenimiento. Por eso el primer paso es saber si 
@@ -630,9 +726,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de carga auto en ferry 1 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_carga_auto_f1;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de carga de autos en el ferry 1
         fila_actual.rnd1_fin_carga_auto = 0;
@@ -642,6 +741,7 @@ export class Simulador {
 
         // paso 2: buscar el auto que se esta cargando en el ferry 1
         let cliente_cargado = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_SIENDO_CARGADO && clte.ferry_id == 1);
+        fila_actual.tipo_evento = `Fin de carga auto en ferry 1 id: ${cliente_cargado.id}`;
 
         // paso 3: cambiar el estado del auto a esperando viaje
         fila_actual.clientes.find(clte => clte.id == cliente_cargado.id).estado = Estaticas.E_ESPERANDO_VIAJE;
@@ -846,6 +946,26 @@ export class Simulador {
                             fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
                             fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
                         } else {
+                            // si no hay 2 espacios es porque hay o 1 o 0, si hay 0 ya lo hicimos, pero si hay 1:
+                            if (fila_anterior.ferry_1.capacidad_restante == 1) {
+                                // pregunto si hay un auto esperando en la cola de la isla
+                                let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
+                                if (auto_esperando) {
+                                    // hay un auto esperando en la cola de la isla y hay justo un espacio en el ferry 1
+                                    // entonces cargo el auto
+                                    fila_actual.ferry_1.capacidad_restante -= 1;
+                                    fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                                    fila_actual.clientes.find(clte => clte.id == auto_esperando.id).ferry_id = 1;
+                                    fila_actual.clientes.find(clte => clte.id == auto_esperando.id).estado = Estaticas.E_SIENDO_CARGADO;
+
+                                    // calcular el tiempo de carga del auto en el ferry 1
+                                    fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                    fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                    fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                    fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+                                }
+                            }
+
                             // si no entra el camion, consulto si ya puedo hacer el viaje del ferry 1
                             if (fila_anterior.ferry_1.capacidad_restante == 0) {
                                 // como ya no entran mas autos, y el ferry 1 termino de cargar ese auto, entonces el ferry 1 puede hacer el viaje
@@ -990,9 +1110,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de carga auto en ferry 2 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_carga_auto_f2;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de carga de autos en el ferry 2
         fila_actual.rnd1_fin_carga_auto = 0;
@@ -1002,6 +1125,7 @@ export class Simulador {
 
         // paso 2: buscar el auto que se esta cargando en el ferry 2
         let cliente_cargado = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_SIENDO_CARGADO && clte.ferry_id == 2);
+        fila_actual.tipo_evento = `Fin de carga auto en ferry 2 id: ${cliente_cargado.id}`;
 
         // paso 3: cambiar el estado del auto a esperando viaje
         fila_actual.clientes.find(clte => clte.id == cliente_cargado.id).estado = Estaticas.E_ESPERANDO_VIAJE;
@@ -1202,6 +1326,26 @@ export class Simulador {
                             fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
                             fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
                         } else {
+                            // si no hay 2 espacios es porque hay o 1 o 0, si hay 0 ya lo hicimos, pero si hay 1:
+                            if (fila_anterior.ferry_2.capacidad_restante == 1) {
+                                // pregunto si hay un auto esperando en la cola de la isla
+                                let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
+                                if (auto_esperando) {
+                                    // hay un auto esperando en la cola de la isla y hay justo un espacio en el ferry 2
+                                    // entonces cargo el auto
+                                    fila_actual.ferry_2.capacidad_restante -= 1;
+                                    fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                                    fila_actual.clientes.find(clte => clte.id == auto_esperando.id).ferry_id = 2;
+                                    fila_actual.clientes.find(clte => clte.id == auto_esperando.id).estado = Estaticas.E_SIENDO_CARGADO;
+
+                                    // calcular el tiempo de carga del auto en el ferry 2
+                                    fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                    fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                    fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                    fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+                                }
+                            }
+
                             if (fila_anterior.ferry_2.capacidad_restante == 0) {
                                 // como ya no entran mas autos, y el ferry 2 termino de cargar ese auto, entonces el ferry 1 puede hacer el viaje
                                 fila_actual.ferry_2.localizacion = Estaticas.L_OCEANO;
@@ -1343,9 +1487,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de carga camion en ferry 1 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_carga_camion_f1;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de carga de camiones en el ferry 1
         fila_actual.rnd1_fin_carga_camion = 0;
@@ -1355,6 +1502,7 @@ export class Simulador {
 
         // paso 2: buscar el camion que se esta cargando en el ferry 1
         let cliente_cargado = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_SIENDO_CARGADO && clte.ferry_id == 1);
+        fila_actual.tipo_evento = `Fin de carga camion en ferry 1 id: ${cliente_cargado.id}`;
 
         // paso 3: cambiar el estado del auto a esperando viaje
         fila_actual.clientes.find(clte => clte.id == cliente_cargado.id).estado = Estaticas.E_ESPERANDO_VIAJE;
@@ -1703,9 +1851,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de carga camion en ferry 2 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_carga_camion_f2;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de carga de camiones en el ferry 2
         fila_actual.rnd1_fin_carga_camion = 0;
@@ -1715,6 +1866,7 @@ export class Simulador {
 
         // paso 2: buscar el camion que se esta cargando en el ferry 2
         let cliente_cargado = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_SIENDO_CARGADO && clte.ferry_id == 2);
+        fila_actual.tipo_evento = `Fin de carga camion en ferry 2 id: ${cliente_cargado.id}`;
 
         // paso 3: cambiar el estado del camion a esperando viaje
         fila_actual.clientes.find(clte => clte.id == cliente_cargado.id).estado = Estaticas.E_ESPERANDO_VIAJE;
@@ -2060,6 +2212,9 @@ export class Simulador {
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_recorrido_ferry_1;
 
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
         // paso 1.5: resetear los valores pertinentes a la fin de recorrido del ferry 1
         fila_actual.rnd1_fin_recorrido = 0;
         fila_actual.rnd2_fin_recorrido = 0;
@@ -2084,16 +2239,13 @@ export class Simulador {
                 fila_actual.ferry_1.ult_loc_tierra = Estaticas.L_ISLA;
                 fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
 
-                // buscar todos los clientes de la fila anterior que esten viajando en el ferry 1
-                let clientes_viajando = fila_anterior.clientes.filter(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_VIAJANDO_FERRY);
-
-                // a todos esos clientes, en la fila actual, setearles el estado de ESPERANDO_DESCARGA
+                // a todos esos clientes, en la fila actual, setearles el estado de ESPERANDO_DESCARGA en la isla
                 fila_actual.clientes.forEach(clte => {
                     if (clte.ferry_id == 1 && clte.estado == Estaticas.E_VIAJANDO_FERRY) {
                         clte.estado = Estaticas.E_ESPERANDO_DESCARGA;
+                        clte.localizacion = Estaticas.L_ISLA;
                     }
                 })
-
 
                 // al primero de esos clientes, setearle el estado de SIENDO DESCARGADO
                 fila_actual.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA).estado = Estaticas.E_SIENDO_DESCARGADO;
@@ -2136,6 +2288,7 @@ export class Simulador {
                 fila_actual.clientes.forEach(clte => {
                     if (clte.ferry_id == 1 && clte.estado == Estaticas.E_VIAJANDO_FERRY) {
                         clte.estado = Estaticas.E_ESPERANDO_DESCARGA;
+                        clte.localizacion = Estaticas.L_CONTINENTE;
                     }
                 })
 
@@ -2187,6 +2340,9 @@ export class Simulador {
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_recorrido_ferry_2;
 
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
         // paso 1.5: resetear los valores pertinentes a la fin de recorrido del ferry 2
         fila_actual.rnd1_fin_recorrido = 0;
         fila_actual.rnd2_fin_recorrido = 0;
@@ -2213,6 +2369,7 @@ export class Simulador {
                 fila_actual.clientes.forEach(clte => {
                     if (clte.ferry_id == 2 && clte.estado == Estaticas.E_VIAJANDO_FERRY) {
                         clte.estado = Estaticas.E_ESPERANDO_DESCARGA;
+                        clte.localizacion = Estaticas.L_ISLA;
                     }
                 })
 
@@ -2256,6 +2413,7 @@ export class Simulador {
                 fila_actual.clientes.forEach(clte => {
                     if (clte.ferry_id == 2 && clte.estado == Estaticas.E_VIAJANDO_FERRY) {
                         clte.estado = Estaticas.E_ESPERANDO_DESCARGA;
+                        clte.localizacion = Estaticas.L_CONTINENTE;
                     }
                 })
 
@@ -2302,9 +2460,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de descarga de auto en ferry 1 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_descarga_auto_f1;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de descarga de auto en el ferry 1
         fila_actual.rnd1_fin_descarga_auto = 0;
@@ -2314,215 +2475,217 @@ export class Simulador {
 
         // paso 2: buscar el auto que se esta descargando
         let auto_descargando = fila_anterior.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_SIENDO_DESCARGADO);
-
+        fila_actual.tipo_evento = `Fin de descarga de auto en ferry 1 id: ${auto_descargando.id}`;
         // paso 3: extraer el tipo de auto y la localizacion destino del auto
-        let tipo_auto = auto_descargando.tipo;
-        let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 1
+        if (auto_descargando) {
+            let tipo_auto = auto_descargando.tipo;
+            let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 1
 
-        // paso 4: En funcion del tipo de auto, actualizar la estadistica
-        if (tipo_auto == Estaticas.T_CAMION) {
-            // es camion
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_camiones_cont += 1;
-                fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_camiones_isla += 1;
-                fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
-            }
-        } else {
-            // es auto
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_autos_cont += 1;
-                fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_autos_isla += 1;
-                fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
-            }
-        }
-
-        // paso 5: Borrar el auto de la lista de clientes de la fila actual
-        fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
-
-        // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
-        if (fila_anterior.ferry_1.capacidad_restante == 10) {
-            // era el ultimo auto en ser descargado
-
-            // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 1
-            if (fila_actual.reloj_mins >= 780) {
-                // se debe detener el funcionamiento del dia del ferry 1
-                // debo preguntar donde esta el ferry 1
+            // paso 4: En funcion del tipo de auto, actualizar la estadistica
+            if (tipo_auto == Estaticas.T_CAMION) {
+                // es camion
                 if (loc_actual == Estaticas.L_ISLA) {
-                    // el ferry 1 esta en la isla
-                    // hacer que el ferry 1 se vaya al continente vacio
-                    fila_actual.ferry_1.estado = Estaticas.E_VIAJANDO;
-                    fila_actual.ferry_1.localizacion = Estaticas.L_OCEANO;
-
-                    // calcular el tiempo de llegada del ferry 1 al continente
-                    fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
-                    fila_actual.fin_recorrido_ferry_1 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    // descargado en la isla
+                    fila_actual.acum_camiones_cont += 1;
+                    fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 1 esta en el continente
-                    // finalizar el dia del ferry 1
-                    fila_actual.ferry_1.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    // descargado en el continente
+                    fila_actual.acum_camiones_isla += 1;
+                    fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
                 }
             } else {
-                // no se debe detener el funcionamiento del dia del ferry 1
-                // pero debo saber donde esta el ferry 1
-                if (loc_actual == Estaticas.L_CONTINENTE) {
-                    // el ferry 1 esta en el continente
-                    // debo preguntar si hay autos esperando en el continente
-                    if (fila_anterior.cola_continente >= 1) {
-                        // hay autos esperando en el continente
-                        // busco el primer auto o camion que este esperando en el continente
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 1
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola del continente en 2 porque es un camion
-                            fila_actual.cola_continente -= 2;
-
-                            // decrementar la capacidad del ferry 1 en 2
-                            fila_actual.ferry_1.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 1
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_continente -= 1;
-
-                            // decrementar la capacidad del ferry 1 en 1
-                            fila_actual.ferry_1.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 1 queda libre para hacer otro viaje
-                        fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
-                    }
+                // es auto
+                if (loc_actual == Estaticas.L_ISLA) {
+                    // descargado en la isla
+                    fila_actual.acum_autos_cont += 1;
+                    fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 1 esta en la isla
-                    // debo preguntar si hay autos esperando en la isla
-                    if (fila_anterior.cola_isla >= 1) {
-                        // hay autos esperando en la isla
-                        // busco el primer auto o camion que este esperando en la isla
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 1
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola de la isla en 2 porque es un camion
-                            fila_actual.cola_isla -= 2;
-
-                            // decrementar la capacidad del ferry 1 en 2
-                            fila_actual.ferry_1.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 1
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_isla -= 1;
-
-                            // decrementar la capacidad del ferry 1 en 1
-                            fila_actual.ferry_1.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 1 queda libre para hacer otro viaje
-                        fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
-                    }
+                    // descargado en el continente
+                    fila_actual.acum_autos_isla += 1;
+                    fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
                 }
             }
-        } else {
-            // no era el ultimo auto en ser descargado
-            // buscar el siguiente auto a ser descargado
-            let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
 
-            if (siguiente_auto_a_descargar) {
-                // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
-                if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
-                    // es un camion
-                    // calcular el tiempo de descarga del camion (ferry 1)
-                    fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
-                    fila_actual.fin_descarga_camion_f1 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+            // paso 5: Borrar el auto de la lista de clientes de la fila actual
+            fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+            // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
+            if (fila_actual.ferry_1.capacidad_restante == 10) {
+                // era el ultimo auto en ser descargado
 
-                    // incrementar la capacidad del ferry 1 en 2
-                    fila_actual.ferry_1.capacidad_restante += 2;
+                // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 1
+                if (fila_actual.reloj_mins >= 780) {
+                    // se debe detener el funcionamiento del dia del ferry 1
+                    // debo preguntar donde esta el ferry 1
+                    if (fila_actual.ferry_1.localizacion == Estaticas.L_ISLA) {
+                        // el ferry 1 esta en la isla
+                        // hacer que el ferry 1 se vaya al continente vacio
+                        fila_actual.ferry_1.estado = Estaticas.E_VIAJANDO;
+                        fila_actual.ferry_1.localizacion = Estaticas.L_OCEANO;
 
-                    // setear el estado del ferry 1 a DESCARGANDO
-                    fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                        // calcular el tiempo de llegada del ferry 1 al continente
+                        fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
+                        fila_actual.fin_recorrido_ferry_1 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    } else {
+                        // el ferry 1 esta en el continente
+                        // finalizar el dia del ferry 1
+                        fila_actual.ferry_1.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    }
                 } else {
-                    // es un auto
-                    // calcular el tiempo de descarga del auto
-                    fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
-                    fila_actual.fin_descarga_auto_f1 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+                    // no se debe detener el funcionamiento del dia del ferry 1
+                    // pero debo saber donde esta el ferry 1
+                    if (fila_actual.ferry_1.localizacion == Estaticas.L_CONTINENTE) {
+                        // el ferry 1 esta en el continente
+                        // debo preguntar si hay autos esperando en el continente
+                        if (fila_anterior.cola_continente >= 1) {
+                            // hay autos esperando en el continente
+                            // busco el primer auto o camion que este esperando en el continente
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 1
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
 
-                    // incrementar la capacidad del ferry 1 en 1
-                    fila_actual.ferry_1.capacidad_restante += 1;
+                                // decrementar la cola del continente en 2 porque es un camion
+                                fila_actual.cola_continente -= 2;
 
-                    // setear el estado del ferry 1 a DESCARGANDO
-                    fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                                // decrementar la capacidad del ferry 1 en 2
+                                fila_actual.ferry_1.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 1
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_continente -= 1;
+
+                                // decrementar la capacidad del ferry 1 en 1
+                                fila_actual.ferry_1.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 1 queda libre para hacer otro viaje
+                            fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
+                        }
+                    } else {
+                        // el ferry 1 esta en la isla
+                        // debo preguntar si hay autos esperando en la isla
+                        if (fila_anterior.cola_isla >= 1) {
+                            // hay autos esperando en la isla
+                            // busco el primer auto o camion que este esperando en la isla
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 1
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
+
+                                // decrementar la cola de la isla en 2 porque es un camion
+                                fila_actual.cola_isla -= 2;
+
+                                // decrementar la capacidad del ferry 1 en 2
+                                fila_actual.ferry_1.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 1
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_isla -= 1;
+
+                                // decrementar la capacidad del ferry 1 en 1
+                                fila_actual.ferry_1.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 1 queda libre para hacer otro viaje
+                            fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
+                        }
+                    }
+                }
+            } else {
+                // no era el ultimo auto en ser descargado
+                // buscar el siguiente auto a ser descargado
+                let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
+
+                if (siguiente_auto_a_descargar) {
+                    // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
+                    if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
+                        // es un camion
+                        // calcular el tiempo de descarga del camion (ferry 1)
+                        fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
+                        fila_actual.fin_descarga_camion_f1 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 1 en 2
+                        fila_actual.ferry_1.capacidad_restante += 2;
+
+                        // setear el estado del ferry 1 a DESCARGANDO
+                        fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                    } else {
+                        // es un auto
+                        // calcular el tiempo de descarga del auto
+                        fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
+                        fila_actual.fin_descarga_auto_f1 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 1 en 1
+                        fila_actual.ferry_1.capacidad_restante += 1;
+
+                        // setear el estado del ferry 1 a DESCARGANDO
+                        fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                    }
                 }
             }
         }
@@ -2538,9 +2701,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de descarga de auto en ferry 2 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_descarga_auto_f2;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de descarga de auto en el ferry 2
         fila_actual.rnd1_fin_descarga_auto = 0;
@@ -2550,215 +2716,218 @@ export class Simulador {
 
         // paso 2: buscar el auto que se esta descargando
         let auto_descargando = fila_anterior.clientes.find(clte => clte.ferry_id == 2 && clte.estado == Estaticas.E_SIENDO_DESCARGADO);
+        fila_actual.tipo_evento = `Fin de descarga de auto en ferry 2 id: ${auto_descargando.id}`;
 
         // paso 3: extraer el tipo de auto y la localizacion destino del auto
-        let tipo_auto = auto_descargando.tipo;
-        let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 2
+        if (auto_descargando) {
+            let tipo_auto = auto_descargando.tipo;
+            let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 2
 
-        // paso 4: En funcion del tipo de auto, actualizar la estadistica
-        if (tipo_auto == Estaticas.T_CAMION) {
-            // es camion
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_camiones_cont += 1;
-                fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_camiones_isla += 1;
-                fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
-            }
-        } else {
-            // es auto
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_autos_cont += 1;
-                fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_autos_isla += 1;
-                fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
-            }
-        }
-
-        // paso 5: Borrar el auto de la lista de clientes de la fila actual
-        fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
-
-        // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
-        if (fila_anterior.ferry_2.capacidad_restante == 20) {
-            // era el ultimo auto en ser descargado
-
-            // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 2
-            if (fila_actual.reloj_mins >= 780) {
-                // se debe detener el funcionamiento del dia del ferry 2
-                // debo preguntar donde esta el ferry 2
+            // paso 4: En funcion del tipo de auto, actualizar la estadistica
+            if (tipo_auto == Estaticas.T_CAMION) {
+                // es camion
                 if (loc_actual == Estaticas.L_ISLA) {
-                    // el ferry 2 esta en la isla
-                    // hacer que el ferry 2 se vaya al continente vacio
-                    fila_actual.ferry_2.estado = Estaticas.E_VIAJANDO;
-                    fila_actual.ferry_2.localizacion = Estaticas.L_OCEANO;
-
-                    // calcular el tiempo de llegada del ferry 2 al continente
-                    fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
-                    fila_actual.fin_recorrido_ferry_2 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    // descargado en la isla
+                    fila_actual.acum_camiones_cont += 1;
+                    fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 2 esta en el continente
-                    // finalizar el dia del ferry 2
-                    fila_actual.ferry_2.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    // descargado en el continente
+                    fila_actual.acum_camiones_isla += 1;
+                    fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
                 }
             } else {
-                // no se debe detener el funcionamiento del dia del ferry 2
-                // pero debo saber donde esta el ferry 2
-                if (loc_actual == Estaticas.L_CONTINENTE) {
-                    // el ferry 2 esta en el continente
-                    // debo preguntar si hay autos esperando en el continente
-                    if (fila_anterior.cola_continente >= 1) {
-                        // hay autos esperando en el continente
-                        // busco el primer auto o camion que este esperando en el continente
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 2
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola del continente en 2 porque es un camion
-                            fila_actual.cola_continente -= 2;
-
-                            // decrementar la capacidad del ferry 2 en 2
-                            fila_actual.ferry_2.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 2
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_continente -= 1;
-
-                            // decrementar la capacidad del ferry 2 en 1
-                            fila_actual.ferry_2.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 2 queda libre para hacer otro viaje
-                        fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
-                    }
+                // es auto
+                if (loc_actual == Estaticas.L_ISLA) {
+                    // descargado en la isla
+                    fila_actual.acum_autos_cont += 1;
+                    fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 2 esta en la isla
-                    // debo preguntar si hay autos esperando en la isla
-                    if (fila_anterior.cola_isla >= 1) {
-                        // hay autos esperando en la isla
-                        // busco el primer auto o camion que este esperando en la isla
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 2
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola de la isla en 2 porque es un camion
-                            fila_actual.cola_isla -= 2;
-
-                            // decrementar la capacidad del ferry 2 en 2
-                            fila_actual.ferry_2.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 2
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_isla -= 1;
-
-                            // decrementar la capacidad del ferry 2 en 1
-                            fila_actual.ferry_2.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 2 queda libre para hacer otro viaje
-                        fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
-                    }
+                    // descargado en el continente
+                    fila_actual.acum_autos_isla += 1;
+                    fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
                 }
             }
-        } else {
-            // no era el ultimo auto en ser descargado
-            // buscar el siguiente auto a ser descargado
-            let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 2 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
 
-            if (siguiente_auto_a_descargar) {
-                // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
-                if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
-                    // es un camion
-                    // calcular el tiempo de descarga del camion (ferry 2)
-                    fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
-                    fila_actual.fin_descarga_camion_f2 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+            // paso 5: Borrar el auto de la lista de clientes de la fila actual
+            fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+            // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
+            if (fila_actual.ferry_2.capacidad_restante == 20) {
+                // era el ultimo auto en ser descargado
 
-                    // incrementar la capacidad del ferry 2 en 2
-                    fila_actual.ferry_2.capacidad_restante += 2;
+                // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 2
+                if (fila_actual.reloj_mins >= 780) {
+                    // se debe detener el funcionamiento del dia del ferry 2
+                    // debo preguntar donde esta el ferry 2
+                    if (fila_actual.ferry_2.localizacion == Estaticas.L_ISLA) {
+                        // el ferry 2 esta en la isla
+                        // hacer que el ferry 2 se vaya al continente vacio
+                        fila_actual.ferry_2.estado = Estaticas.E_VIAJANDO;
+                        fila_actual.ferry_2.localizacion = Estaticas.L_OCEANO;
 
-                    // setear el estado del ferry 2 a DESCARGANDO
-                    fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                        // calcular el tiempo de llegada del ferry 2 al continente
+                        fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
+                        fila_actual.fin_recorrido_ferry_2 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    } else {
+                        // el ferry 2 esta en el continente
+                        // finalizar el dia del ferry 2
+                        fila_actual.ferry_2.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    }
                 } else {
-                    // es un auto
-                    // calcular el tiempo de descarga del auto
-                    fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
-                    fila_actual.fin_descarga_auto_f1 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+                    // no se debe detener el funcionamiento del dia del ferry 2
+                    // pero debo saber donde esta el ferry 2
+                    if (fila_actual.ferry_2.localizacion == Estaticas.L_CONTINENTE) {
+                        // el ferry 2 esta en el continente
+                        // debo preguntar si hay autos esperando en el continente
+                        if (fila_anterior.cola_continente >= 1) {
+                            // hay autos esperando en el continente
+                            // busco el primer auto o camion que este esperando en el continente
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 2
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
 
-                    // incrementar la capacidad del ferry 2 en 1
-                    fila_actual.ferry_2.capacidad_restante += 1;
+                                // decrementar la cola del continente en 2 porque es un camion
+                                fila_actual.cola_continente -= 2;
 
-                    // setear el estado del ferry 2 a DESCARGANDO
-                    fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                                // decrementar la capacidad del ferry 2 en 2
+                                fila_actual.ferry_2.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 2
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_continente -= 1;
+
+                                // decrementar la capacidad del ferry 2 en 1
+                                fila_actual.ferry_2.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 2 queda libre para hacer otro viaje
+                            fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
+                        }
+                    } else {
+                        // el ferry 2 esta en la isla
+                        // debo preguntar si hay autos esperando en la isla
+                        if (fila_anterior.cola_isla >= 1) {
+                            // hay autos esperando en la isla
+                            // busco el primer auto o camion que este esperando en la isla
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 2
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
+
+                                // decrementar la cola de la isla en 2 porque es un camion
+                                fila_actual.cola_isla -= 2;
+
+                                // decrementar la capacidad del ferry 2 en 2
+                                fila_actual.ferry_2.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 2
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_isla -= 1;
+
+                                // decrementar la capacidad del ferry 2 en 1
+                                fila_actual.ferry_2.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 2 queda libre para hacer otro viaje
+                            fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
+                        }
+                    }
+                }
+            } else {
+                // no era el ultimo auto en ser descargado
+                // buscar el siguiente auto a ser descargado
+                let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 2 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
+
+                if (siguiente_auto_a_descargar) {
+                    // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
+                    if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
+                        // es un camion
+                        // calcular el tiempo de descarga del camion (ferry 2)
+                        fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
+                        fila_actual.fin_descarga_camion_f2 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 2 en 2
+                        fila_actual.ferry_2.capacidad_restante += 2;
+
+                        // setear el estado del ferry 2 a DESCARGANDO
+                        fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                    } else {
+                        // es un auto
+                        // calcular el tiempo de descarga del auto
+                        fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
+                        fila_actual.fin_descarga_auto_f2 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 2 en 1
+                        fila_actual.ferry_2.capacidad_restante += 1;
+
+                        // setear el estado del ferry 2 a DESCARGANDO
+                        fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                    }
                 }
             }
         }
@@ -2775,9 +2944,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de descarga de camion en ferry 1 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_descarga_camion_f1;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de descarga de auto en el ferry 1
         fila_actual.rnd1_fin_descarga_camion = 0;
@@ -2787,215 +2959,218 @@ export class Simulador {
 
         // paso 2: buscar el auto que se esta descargando
         let auto_descargando = fila_anterior.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_SIENDO_DESCARGADO);
+        fila_actual.tipo_evento = `Fin de descarga de camion en ferry 1 id: ${auto_descargando.id}`;
 
         // paso 3: extraer el tipo de auto y la localizacion destino del auto
-        let tipo_auto = auto_descargando.tipo;
-        let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 1
+        if (auto_descargando) {
+            let tipo_auto = auto_descargando.tipo;
+            let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 1
 
-        // paso 4: En funcion del tipo de auto, actualizar la estadistica
-        if (tipo_auto == Estaticas.T_CAMION) {
-            // es camion
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_camiones_cont += 1;
-                fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_camiones_isla += 1;
-                fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
-            }
-        } else {
-            // es auto
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_autos_cont += 1;
-                fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_autos_isla += 1;
-                fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
-            }
-        }
-
-        // paso 5: Borrar el auto de la lista de clientes de la fila actual
-        fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
-
-        // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
-        if (fila_anterior.ferry_1.capacidad_restante == 10) {
-            // era el ultimo auto en ser descargado
-
-            // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 1
-            if (fila_actual.reloj_mins >= 780) {
-                // se debe detener el funcionamiento del dia del ferry 1
-                // debo preguntar donde esta el ferry 1
+            // paso 4: En funcion del tipo de auto, actualizar la estadistica
+            if (tipo_auto == Estaticas.T_CAMION) {
+                // es camion
                 if (loc_actual == Estaticas.L_ISLA) {
-                    // el ferry 1 esta en la isla
-                    // hacer que el ferry 1 se vaya al continente vacio
-                    fila_actual.ferry_1.estado = Estaticas.E_VIAJANDO;
-                    fila_actual.ferry_1.localizacion = Estaticas.L_OCEANO;
-
-                    // calcular el tiempo de llegada del ferry 1 al continente
-                    fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
-                    fila_actual.fin_recorrido_ferry_1 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    // descargado en la isla
+                    fila_actual.acum_camiones_cont += 1;
+                    fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 1 esta en el continente
-                    // finalizar el dia del ferry 1
-                    fila_actual.ferry_1.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    // descargado en el continente
+                    fila_actual.acum_camiones_isla += 1;
+                    fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
                 }
             } else {
-                // no se debe detener el funcionamiento del dia del ferry 1
-                // pero debo saber donde esta el ferry 1
-                if (loc_actual == Estaticas.L_CONTINENTE) {
-                    // el ferry 1 esta en el continente
-                    // debo preguntar si hay autos esperando en el continente
-                    if (fila_anterior.cola_continente >= 1) {
-                        // hay autos esperando en el continente
-                        // busco el primer auto o camion que este esperando en el continente
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 1
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola del continente en 2 porque es un camion
-                            fila_actual.cola_continente -= 2;
-
-                            // decrementar la capacidad del ferry 1 en 2
-                            fila_actual.ferry_1.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 1
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_continente -= 1;
-
-                            // decrementar la capacidad del ferry 1 en 1
-                            fila_actual.ferry_1.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 1 queda libre para hacer otro viaje
-                        fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
-                    }
+                // es auto
+                if (loc_actual == Estaticas.L_ISLA) {
+                    // descargado en la isla
+                    fila_actual.acum_autos_cont += 1;
+                    fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 1 esta en la isla
-                    // debo preguntar si hay autos esperando en la isla
-                    if (fila_anterior.cola_isla >= 1) {
-                        // hay autos esperando en la isla
-                        // busco el primer auto o camion que este esperando en la isla
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 1
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola de la isla en 2 porque es un camion
-                            fila_actual.cola_isla -= 2;
-
-                            // decrementar la capacidad del ferry 1 en 2
-                            fila_actual.ferry_1.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 1
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_isla -= 1;
-
-                            // decrementar la capacidad del ferry 1 en 1
-                            fila_actual.ferry_1.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 1 a CARGANDO
-                            fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 1 queda libre para hacer otro viaje
-                        fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
-                    }
+                    // descargado en el continente
+                    fila_actual.acum_autos_isla += 1;
+                    fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
                 }
             }
-        } else {
-            // no era el ultimo auto en ser descargado
-            // buscar el siguiente auto a ser descargado
-            let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
 
-            if (siguiente_auto_a_descargar) {
-                // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
-                if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
-                    // es un camion
-                    // calcular el tiempo de descarga del camion (ferry 1)
-                    fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
-                    fila_actual.fin_descarga_camion_f1 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+            // paso 5: Borrar el auto de la lista de clientes de la fila actual
+            fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+            // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
+            if (fila_actual.ferry_1.capacidad_restante == 10) {
+                // era el ultimo auto en ser descargado
 
-                    // incrementar la capacidad del ferry 1 en 2
-                    fila_actual.ferry_1.capacidad_restante += 2;
+                // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 1
+                if (fila_actual.reloj_mins >= 780) {
+                    // se debe detener el funcionamiento del dia del ferry 1
+                    // debo preguntar donde esta el ferry 1
+                    if (fila_actual.ferry_1.localizacion == Estaticas.L_ISLA) {
+                        // el ferry 1 esta en la isla
+                        // hacer que el ferry 1 se vaya al continente vacio
+                        fila_actual.ferry_1.estado = Estaticas.E_VIAJANDO;
+                        fila_actual.ferry_1.localizacion = Estaticas.L_OCEANO;
 
-                    // setear el estado del ferry 1 a DESCARGANDO
-                    fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                        // calcular el tiempo de llegada del ferry 1 al continente
+                        fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
+                        fila_actual.fin_recorrido_ferry_1 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    } else {
+                        // el ferry 1 esta en el continente
+                        // finalizar el dia del ferry 1
+                        fila_actual.ferry_1.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    }
                 } else {
-                    // es un auto
-                    // calcular el tiempo de descarga del auto
-                    fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
-                    fila_actual.fin_descarga_auto_f1 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+                    // no se debe detener el funcionamiento del dia del ferry 1
+                    // pero debo saber donde esta el ferry 1
+                    if (fila_actual.ferry_1.localizacion == Estaticas.L_CONTINENTE) {
+                        // el ferry 1 esta en el continente
+                        // debo preguntar si hay autos esperando en el continente
+                        if (fila_anterior.cola_continente >= 1) {
+                            // hay autos esperando en el continente
+                            // busco el primer auto o camion que este esperando en el continente
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 1
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
 
-                    // incrementar la capacidad del ferry 1 en 1
-                    fila_actual.ferry_1.capacidad_restante += 1;
+                                // decrementar la cola del continente en 2 porque es un camion
+                                fila_actual.cola_continente -= 2;
 
-                    // setear el estado del ferry 1 a DESCARGANDO
-                    fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                                // decrementar la capacidad del ferry 1 en 2
+                                fila_actual.ferry_1.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 1
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_continente -= 1;
+
+                                // decrementar la capacidad del ferry 1 en 1
+                                fila_actual.ferry_1.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 1 queda libre para hacer otro viaje
+                            fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
+                        }
+                    } else {
+                        // el ferry 1 esta en la isla
+                        // debo preguntar si hay autos esperando en la isla
+                        if (fila_anterior.cola_isla >= 1) {
+                            // hay autos esperando en la isla
+                            // busco el primer auto o camion que este esperando en la isla
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 1
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
+
+                                // decrementar la cola de la isla en 2 porque es un camion
+                                fila_actual.cola_isla -= 2;
+
+                                // decrementar la capacidad del ferry 1 en 2
+                                fila_actual.ferry_1.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 1
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 1;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_isla -= 1;
+
+                                // decrementar la capacidad del ferry 1 en 1
+                                fila_actual.ferry_1.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 1 a CARGANDO
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 1 queda libre para hacer otro viaje
+                            fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
+                        }
+                    }
+                }
+            } else {
+                // no era el ultimo auto en ser descargado
+                // buscar el siguiente auto a ser descargado
+                let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
+
+                if (siguiente_auto_a_descargar) {
+                    // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
+                    if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
+                        // es un camion
+                        // calcular el tiempo de descarga del camion (ferry 1)
+                        fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
+                        fila_actual.fin_descarga_camion_f1 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 1 en 2
+                        fila_actual.ferry_1.capacidad_restante += 2;
+
+                        // setear el estado del ferry 1 a DESCARGANDO
+                        fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                    } else {
+                        // es un auto
+                        // calcular el tiempo de descarga del auto
+                        fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
+                        fila_actual.fin_descarga_auto_f1 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 1 en 1
+                        fila_actual.ferry_1.capacidad_restante += 1;
+
+                        // setear el estado del ferry 1 a DESCARGANDO
+                        fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
+                    }
                 }
             }
         }
@@ -3011,9 +3186,12 @@ export class Simulador {
 
         // paso 1: establecer los datos del evento
         fila_actual.nroEvento = fila_anterior.nroEvento + 1;
-        fila_actual.tipo_evento = `Fin de descarga de camion en ferry 2 `;
+
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.fin_descarga_camion_f2;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la fin de descarga de auto en el ferry 2
         fila_actual.rnd1_fin_descarga_camion = 0;
@@ -3023,215 +3201,218 @@ export class Simulador {
 
         // paso 2: buscar el auto que se esta descargando
         let auto_descargando = fila_anterior.clientes.find(clte => clte.ferry_id == 2 && clte.estado == Estaticas.E_SIENDO_DESCARGADO);
+        fila_actual.tipo_evento = `Fin de descarga de camion en ferry 2 id: ${auto_descargando.id}`;
 
         // paso 3: extraer el tipo de auto y la localizacion destino del auto
-        let tipo_auto = auto_descargando.tipo;
-        let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 2
+        if (auto_descargando) {
+            let tipo_auto = auto_descargando.tipo;
+            let loc_actual = auto_descargando.loc_destino; // donde se encuentra actualmente el auto y el ferry 2
 
-        // paso 4: En funcion del tipo de auto, actualizar la estadistica
-        if (tipo_auto == Estaticas.T_CAMION) {
-            // es camion
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_camiones_cont += 1;
-                fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_camiones_isla += 1;
-                fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
-            }
-        } else {
-            // es auto
-            if (loc_actual == Estaticas.L_ISLA) {
-                // descargado en la isla
-                fila_actual.acum_autos_cont += 1;
-                fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
-            } else {
-                // descargado en el continente
-                fila_actual.acum_autos_isla += 1;
-                fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
-            }
-        }
-
-        // paso 5: Borrar el auto de la lista de clientes de la fila actual
-        fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
-
-        // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
-        if (fila_anterior.ferry_2.capacidad_restante == 20) {
-            // era el ultimo auto en ser descargado
-
-            // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 2
-            if (fila_actual.reloj_mins >= 780) {
-                // se debe detener el funcionamiento del dia del ferry 2
-                // debo preguntar donde esta el ferry 2
+            // paso 4: En funcion del tipo de auto, actualizar la estadistica
+            if (tipo_auto == Estaticas.T_CAMION) {
+                // es camion
                 if (loc_actual == Estaticas.L_ISLA) {
-                    // el ferry 2 esta en la isla
-                    // hacer que el ferry 2 se vaya al continente vacio
-                    fila_actual.ferry_2.estado = Estaticas.E_VIAJANDO;
-                    fila_actual.ferry_2.localizacion = Estaticas.L_OCEANO;
-
-                    // calcular el tiempo de llegada del ferry 2 al continente
-                    fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
-                    fila_actual.fin_recorrido_ferry_2 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    // descargado en la isla
+                    fila_actual.acum_camiones_cont += 1;
+                    fila_actual.promedio_camiones_cont = fila_actual.acum_camiones_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 2 esta en el continente
-                    // finalizar el dia del ferry 2
-                    fila_actual.ferry_2.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    // descargado en el continente
+                    fila_actual.acum_camiones_isla += 1;
+                    fila_actual.promedio_camiones_isla = fila_actual.acum_camiones_isla / fila_actual.reloj_dias;
                 }
             } else {
-                // no se debe detener el funcionamiento del dia del ferry 2
-                // pero debo saber donde esta el ferry 2
-                if (loc_actual == Estaticas.L_CONTINENTE) {
-                    // el ferry 2 esta en el continente
-                    // debo preguntar si hay autos esperando en el continente
-                    if (fila_anterior.cola_continente >= 1) {
-                        // hay autos esperando en el continente
-                        // busco el primer auto o camion que este esperando en el continente
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 2
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola del continente en 2 porque es un camion
-                            fila_actual.cola_continente -= 2;
-
-                            // decrementar la capacidad del ferry 2 en 2
-                            fila_actual.ferry_2.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 2
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_continente -= 1;
-
-                            // decrementar la capacidad del ferry 2 en 1
-                            fila_actual.ferry_2.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 2 queda libre para hacer otro viaje
-                        fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
-                    }
+                // es auto
+                if (loc_actual == Estaticas.L_ISLA) {
+                    // descargado en la isla
+                    fila_actual.acum_autos_cont += 1;
+                    fila_actual.promedio_autos_cont = fila_actual.acum_autos_cont / fila_actual.reloj_dias;
                 } else {
-                    // el ferry 2 esta en la isla
-                    // debo preguntar si hay autos esperando en la isla
-                    if (fila_anterior.cola_isla >= 1) {
-                        // hay autos esperando en la isla
-                        // busco el primer auto o camion que este esperando en la isla
-                        let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                        // en funcion del tipo de auto, calculo el tiempo de carga
-                        if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
-                            // es camion
-                            // calcular el tiempo de carga del camion en el ferry 2
-                            fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
-                            fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola de la isla en 2 porque es un camion
-                            fila_actual.cola_isla -= 2;
-
-                            // decrementar la capacidad del ferry 2 en 2
-                            fila_actual.ferry_2.capacidad_restante -= 2;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        } else {
-                            // es auto
-                            // calcular el tiempo de carga del auto en el ferry 2
-                            fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
-                            fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
-                            fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
-
-                            // cambiar el estado del cliente a SIENDO CARGADO
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
-                            fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
-
-                            // decrementar la cola del continente en 1 porque es un auto
-                            fila_actual.cola_isla -= 1;
-
-                            // decrementar la capacidad del ferry 2 en 1
-                            fila_actual.ferry_2.capacidad_restante -= 1;
-
-                            // setear el estado del ferry 2 a CARGANDO
-                            fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
-                        }
-                    } else {
-                        // no hay nadie esperando en el continente y son menos de las 8 de la noche
-                        // entonces el ferry 2 queda libre para hacer otro viaje
-                        fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
-                    }
+                    // descargado en el continente
+                    fila_actual.acum_autos_isla += 1;
+                    fila_actual.promedio_autos_isla = fila_actual.acum_autos_isla / fila_actual.reloj_dias;
                 }
             }
-        } else {
-            // no era el ultimo auto en ser descargado
-            // buscar el siguiente auto a ser descargado
-            let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 2 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
 
-            if (siguiente_auto_a_descargar) {
-                // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
-                if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
-                    // es un camion
-                    // calcular el tiempo de descarga del camion (ferry 2)
-                    fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
-                    fila_actual.fin_descarga_camion_f2 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+            // paso 5: Borrar el auto de la lista de clientes de la fila actual
+            fila_actual.clientes = fila_actual.clientes.filter(clte => clte.id != auto_descargando.id);
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+            // paso 6: Una vez descargado el auto, tenemos que saber si ese auto era el ultimo en ser descargado
+            if (fila_actual.ferry_2.capacidad_restante == 20) {
+                // era el ultimo auto en ser descargado
 
-                    // incrementar la capacidad del ferry 2 en 2
-                    fila_actual.ferry_2.capacidad_restante += 2;
+                // tengo que preguntar si ya se debe detener el funcionamiento del dia del ferry 2
+                if (fila_actual.reloj_mins >= 780) {
+                    // se debe detener el funcionamiento del dia del ferry 2
+                    // debo preguntar donde esta el ferry 2
+                    if (fila_actual.ferry_2.localizacion == Estaticas.L_ISLA) {
+                        // el ferry 2 esta en la isla
+                        // hacer que el ferry 2 se vaya al continente vacio
+                        fila_actual.ferry_2.estado = Estaticas.E_VIAJANDO;
+                        fila_actual.ferry_2.localizacion = Estaticas.L_OCEANO;
 
-                    // setear el estado del ferry 2 a DESCARGANDO
-                    fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                        // calcular el tiempo de llegada del ferry 2 al continente
+                        fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
+                        fila_actual.fin_recorrido_ferry_2 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+                    } else {
+                        // el ferry 2 esta en el continente
+                        // finalizar el dia del ferry 2
+                        fila_actual.ferry_2.estado = Estaticas.E_FIN_ACTIVIDAD_DIA;
+                    }
                 } else {
-                    // es un auto
-                    // calcular el tiempo de descarga del auto
-                    fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
-                    fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
-                    fila_actual.fin_descarga_auto_f2 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+                    // no se debe detener el funcionamiento del dia del ferry 2
+                    // pero debo saber donde esta el ferry 2
+                    if (fila_actual.ferry_2.localizacion == Estaticas.L_CONTINENTE) {
+                        // el ferry 2 esta en el continente
+                        // debo preguntar si hay autos esperando en el continente
+                        if (fila_anterior.cola_continente >= 1) {
+                            // hay autos esperando en el continente
+                            // busco el primer auto o camion que este esperando en el continente
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 2
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
 
-                    // cambiar el estado del cliente a SIENDO DESCARGADO
-                    fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
 
-                    // incrementar la capacidad del ferry 2 en 1
-                    fila_actual.ferry_2.capacidad_restante += 1;
+                                // decrementar la cola del continente en 2 porque es un camion
+                                fila_actual.cola_continente -= 2;
 
-                    // setear el estado del ferry 2 a DESCARGANDO
-                    fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                                // decrementar la capacidad del ferry 2 en 2
+                                fila_actual.ferry_2.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 2
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_continente -= 1;
+
+                                // decrementar la capacidad del ferry 2 en 1
+                                fila_actual.ferry_2.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 2 queda libre para hacer otro viaje
+                            fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
+                        }
+                    } else {
+                        // el ferry 2 esta en la isla
+                        // debo preguntar si hay autos esperando en la isla
+                        if (fila_anterior.cola_isla >= 1) {
+                            // hay autos esperando en la isla
+                            // busco el primer auto o camion que este esperando en la isla
+                            let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+                            // en funcion del tipo de auto, calculo el tiempo de carga
+                            if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
+                                // es camion
+                                // calcular el tiempo de carga del camion en el ferry 2
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
+
+                                // decrementar la cola de la isla en 2 porque es un camion
+                                fila_actual.cola_isla -= 2;
+
+                                // decrementar la capacidad del ferry 2 en 2
+                                fila_actual.ferry_2.capacidad_restante -= 2;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            } else {
+                                // es auto
+                                // calcular el tiempo de carga del auto en el ferry 2
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+
+                                // cambiar el estado del cliente a SIENDO CARGADO
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto_a_cargar.id).ferry_id = 2;
+
+                                // decrementar la cola del continente en 1 porque es un auto
+                                fila_actual.cola_isla -= 1;
+
+                                // decrementar la capacidad del ferry 2 en 1
+                                fila_actual.ferry_2.capacidad_restante -= 1;
+
+                                // setear el estado del ferry 2 a CARGANDO
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                            }
+                        } else {
+                            // no hay nadie esperando en el continente y son menos de las 8 de la noche
+                            // entonces el ferry 2 queda libre para hacer otro viaje
+                            fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
+                        }
+                    }
+                }
+            } else {
+                // no era el ultimo auto en ser descargado
+                // buscar el siguiente auto a ser descargado
+                let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 2 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
+
+                if (siguiente_auto_a_descargar) {
+                    // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
+                    if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
+                        // es un camion
+                        // calcular el tiempo de descarga del camion (ferry 2)
+                        fila_actual.rnd1_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_camion = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_camion, SParametros.getInstance().desviacion_descarga_camion, fila_actual.rnd1_fin_descarga_camion, fila_actual.rnd2_fin_descarga_camion);
+                        fila_actual.fin_descarga_camion_f2 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 2 en 2
+                        fila_actual.ferry_2.capacidad_restante += 2;
+
+                        // setear el estado del ferry 2 a DESCARGANDO
+                        fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                    } else {
+                        // es un auto
+                        // calcular el tiempo de descarga del auto
+                        fila_actual.rnd1_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_descarga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_descarga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_descarga_auto, SParametros.getInstance().desviacion_descarga_auto, fila_actual.rnd1_fin_descarga_auto, fila_actual.rnd2_fin_descarga_auto);
+                        fila_actual.fin_descarga_auto_f2 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
+
+                        // cambiar el estado del cliente a SIENDO DESCARGADO
+                        fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
+
+                        // incrementar la capacidad del ferry 2 en 1
+                        fila_actual.ferry_2.capacidad_restante += 1;
+
+                        // setear el estado del ferry 2 a DESCARGANDO
+                        fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
+                    }
                 }
             }
         }
@@ -3257,6 +3438,9 @@ export class Simulador {
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.prox_llegada_autos_isla;
 
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
         // paso 1.5: resetear los valores pertinentes a la llegada de autos a la isla
         fila_actual.rnd1_llegada_autos_isla = 0;
         fila_actual.rnd2_llegada_autos_isla = 0;
@@ -3269,13 +3453,56 @@ export class Simulador {
 
         // Paso 3: Consultar si hay cola en la isla o no
         if (fila_anterior.cola_isla >= 1) {
-            // hay cola en la isla
-            fila_actual.cola_isla += 1;
-            auto.estado = Estaticas.E_ESPERANDO_CARGA;
+            let autos_en_cola = fila_anterior.clientes.filter(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
+            let son_todos_camiones = autos_en_cola.every(clte => clte.tipo == Estaticas.T_CAMION);
 
-            if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
-                fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+            if (son_todos_camiones) {
+                if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE && fila_anterior.ferry_1.localizacion == Estaticas.L_ISLA && fila_anterior.ferry_1.capacidad_restante >= 1) {
+                    // si hay capacidad en el ferry 1, el auto se sube al ferry 1
+                    fila_actual.ferry_1.capacidad_restante -= 1;
+                    auto.ferry_id = 1;
+                    auto.estado = Estaticas.E_SIENDO_CARGADO;
+                    fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+
+                    // calcular el tiempo de carga del auto en el ferry 1
+                    fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                    fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                    fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                    fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+                } else {
+                    // pregunto si hay capacidad en el ferry 2
+                    if (fila_anterior.ferry_2.estado == Estaticas.E_LIBRE && fila_anterior.ferry_2.localizacion == Estaticas.L_ISLA && fila_anterior.ferry_2.capacidad_restante >= 1) {
+                        // si hay capacidad en el ferry 1, el auto se sube al ferry 2
+                        fila_actual.ferry_2.capacidad_restante -= 1;
+                        auto.ferry_id = 2;
+                        auto.estado = Estaticas.E_SIENDO_CARGADO;
+                        fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+
+                        // calcular el tiempo de carga del auto en el ferry 2
+                        fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                        fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                        fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+                    } else {
+                        // no hay capacidad en ningun ferry, por ende, se va a la cola
+                        fila_actual.cola_isla += 1;
+                        auto.estado = Estaticas.E_ESPERANDO_CARGA;
+
+                        if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                            fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                        }
+                    }
+                }
+            } else {
+                // si no son todos camiones, entonces el auto que llega a la isla se va a la cola
+                auto.estado = Estaticas.E_ESPERANDO_CARGA;
+                fila_actual.cola_isla += 1;
+
+                if (fila_actual.cola_isla > fila_anterior.cola_isla) {
+                    fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                }
             }
+
         } else {
             // no hay autos esperando en la isla
             // debo saber si hay ferrys disponibles en la isla, empezando por el ferry 1
@@ -3372,6 +3599,9 @@ export class Simulador {
         fila_actual.tipo_evento = `Llegada de camion a la isla id: ${this.ultimo_clte_id + 1}`;
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.prox_llegada_camiones_isla;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes a la llegada de camiones a la isla
         fila_actual.rnd1_llegada_camiones_isla = 0;
@@ -3490,6 +3720,9 @@ export class Simulador {
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.habilitacion_llegadas_isla;
 
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
         // paso 1.5: resetear los valores pertinentes a la habilitacion de llegadas a la isla
         fila_actual.habilitacion_llegadas_isla = 0;
 
@@ -3519,6 +3752,9 @@ export class Simulador {
         fila_actual.tipo_evento = `Corte de llegadas a la isla`;
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.corte_llegadas_isla;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
 
         // paso 1.5: resetear los valores pertinentes al corte de llegadas a la isla
         fila_actual.corte_llegadas_isla = 0;
@@ -3550,6 +3786,9 @@ export class Simulador {
         fila_actual.reloj_dias = fila_anterior.reloj_dias;
         fila_actual.reloj_mins = fila_anterior.corte_llegadas_cont;
 
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
         // paso 1.5: resetear los valores pertinentes al corte de llegadas al continente
         fila_actual.corte_llegadas_cont = 0;
 
@@ -3573,7 +3812,7 @@ export class Simulador {
     simular() {
         try {
             let iteracion = 0
-            while (iteracion < 80) {
+            while (iteracion < 1000) {
                 iteracion += 1;
                 let proximo_evento = this.determinar_proximo_evento(this.array[this.array.length - 1]);
                 console.log(proximo_evento);
@@ -3694,9 +3933,34 @@ export class Simulador {
         let minimo = Math.min(...valores.map(val => val.valor));
         let proximo = valores.find(val => val.valor === minimo);
 
+        console.log("q pasa: ", proximo);
+
         proximo_evento.tipo = proximo.tipo;
         proximo_evento.valor = proximo.valor;
 
         return proximo_evento;
+    }
+
+    resetAllRnds(fila_actual) {
+        fila_actual.rnd1_llegada_autos_cont = 0;
+        fila_actual.rnd2_llegada_autos_cont = 0;
+        fila_actual.rnd1_llegada_camiones_cont = 0;
+        fila_actual.rnd2_llegada_camiones_cont = 0;
+        fila_actual.rnd1_fin_carga_auto = 0;
+        fila_actual.rnd2_fin_carga_auto = 0;
+        fila_actual.rnd1_fin_carga_camion = 0;
+        fila_actual.rnd2_fin_carga_camion = 0;
+        fila_actual.rnd1_fin_descarga_auto = 0;
+        fila_actual.rnd2_fin_descarga_auto = 0;
+        fila_actual.rnd1_fin_descarga_camion = 0;
+        fila_actual.rnd2_fin_descarga_camion = 0;
+        fila_actual.rnd1_fin_mantenimiento = 0;
+        fila_actual.rnd2_fin_mantenimiento = 0;
+        fila_actual.rnd1_fin_recorrido = 0;
+        fila_actual.rnd2_fin_recorrido = 0;
+        fila_actual.rnd1_llegada_autos_isla = 0;
+        fila_actual.rnd2_llegada_autos_isla = 0;
+        fila_actual.rnd1_llegada_camiones_isla = 0;
+        fila_actual.rnd2_llegada_camiones_isla = 0;
     }
 }
