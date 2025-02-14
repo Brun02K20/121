@@ -35,6 +35,7 @@ export class Estaticas {
     static E_FIN_CARGA_AUTO_F2 = "Fin carga auto F2";
     static E_FIN_CARGA_CAMION_F2 = "Fin carga camion F2";
 
+    static E_INICIO_MANTENIMIENTO = "Inicio mantenimiento";
     static E_FIN_MANTENIMIENTO = "Fin mantenimiento";
     static E_FIN_RECORRIDO_FERRY_1 = "Fin recorrido ferry 1";
     static E_FIN_RECORRIDO_FERRY_2 = "Fin recorrido ferry 2";

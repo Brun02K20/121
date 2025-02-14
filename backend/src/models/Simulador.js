@@ -79,6 +79,7 @@ export class Simulador {
         this.iteracion0.fin_descarga_camion_f2 = 0;
 
         // fin de mantenimiento
+        this.iteracion0.inicio_mantenimiento = 0;
         this.iteracion0.t_mantenimiento = 0;
         this.iteracion0.fin_mantenimiento = 0;
 
@@ -4142,12 +4143,7 @@ export class Simulador {
         return fila_actual;
     }
 
-    // 14vo tipo de evento: Fin de mantenimiento
-    fin_mantenimiento(fila_anterior) {
-
-    }
-
-    // 15to tipo de evento: Llegada de autos a la isla
+    // 14vo tipo de evento: Llegada de autos a la isla
     llegada_auto_a_isla(fila_anterior) {
         let fila_actual = structuredClone(fila_anterior);
 
@@ -4309,7 +4305,7 @@ export class Simulador {
         return fila_actual;
     }
 
-    // 16to tipo de evento: Llegada de camiones a la isla
+    // 15to tipo de evento: Llegada de camiones a la isla
     llegada_camion_a_isla(fila_anterior) {
         let fila_actual = structuredClone(fila_anterior);
 
@@ -4429,7 +4425,7 @@ export class Simulador {
         return fila_actual;
     }
 
-    // 17mo tipo de evento: Habilitacion de llegadas a la isla
+    // 16to tipo de evento: Habilitacion de llegadas a la isla
     habilitar_llegadas_isla(fila_anterior) {
         let fila_actual = structuredClone(fila_anterior);
 
@@ -4462,7 +4458,7 @@ export class Simulador {
         return fila_actual;
     }
 
-    // 18vo tipo de evento: Corte de llegadas a la isla
+    // 17mo tipo de evento: Corte de llegadas a la isla
     corte_llegadas_isla(fila_anterior) {
         let fila_actual = structuredClone(fila_anterior);
 
@@ -4495,7 +4491,7 @@ export class Simulador {
         return fila_actual;
     }
 
-    // 19no tipo de evento: Corte de llegadas al continente
+    // 18vo tipo de evento: Corte de llegadas al continente
     corte_llegadas_cont(fila_anterior) {
         let fila_actual = structuredClone(fila_anterior);
 
@@ -4531,7 +4527,7 @@ export class Simulador {
     simular() {
         try {
             let iteracion = 0
-            while (iteracion < 1000) {
+            while (this.array[this.array.length - 1].reloj_dias <= 11) {
                 iteracion += 1;
                 let proximo_evento = this.determinar_proximo_evento(this.array[this.array.length - 1]);
 
@@ -4597,6 +4593,12 @@ export class Simulador {
                         case Estaticas.E_FIN_ACTIVIDAD_DIA:
                             this.chequear_fin_dia(this.array[this.array.length - 1]);
                             break;
+                        case Estaticas.E_INICIO_MANTENIMIENTO:
+                            this.inicio_mantenimiento(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_MANTENIMIENTO:
+                            this.fin_mantenimiento(this.array[this.array.length - 1]);
+                            break;
                         default:
                             console.log("No hay eventos pendientes");
                             break;
@@ -4624,6 +4626,7 @@ export class Simulador {
         return cliente;
     }
 
+    // 19no tipo de evento: Fin de actividad del dia
     chequear_fin_dia(fila_anterior) {
         let fila_actual = structuredClone(fila_anterior);
 
@@ -4705,6 +4708,7 @@ export class Simulador {
             { tipo: Estaticas.E_FIN_CARGA_AUTO_F2, valor: fila_anterior.fin_carga_auto_f2 },
             { tipo: Estaticas.E_FIN_CARGA_CAMION_F1, valor: fila_anterior.fin_carga_camion_f1 },
             { tipo: Estaticas.E_FIN_CARGA_CAMION_F2, valor: fila_anterior.fin_carga_camion_f2 },
+            { tipo: Estaticas.E_INICIO_MANTENIMIENTO, valor: fila_anterior.inicio_mantenimiento },
             { tipo: Estaticas.E_FIN_MANTENIMIENTO, valor: fila_anterior.fin_mantenimiento },
             { tipo: Estaticas.E_FIN_RECORRIDO_FERRY_1, valor: fila_anterior.fin_recorrido_ferry_1 },
             { tipo: Estaticas.E_FIN_RECORRIDO_FERRY_2, valor: fila_anterior.fin_recorrido_ferry_2 },
@@ -4776,8 +4780,10 @@ export class Simulador {
         fila_actual.rnd2_llegada_camiones_isla = 0;
         fila_actual.t_llegada_camiones_isla = 0;
 
+        fila_actual.t_mantenimiento = 0;
     }
 
+    // 20mo tipo de evento: Nuevo dia
     nuevo_dia(fila_anterior) {
         let fila_actual = structuredClone(fila_anterior);
 
@@ -4843,6 +4849,7 @@ export class Simulador {
         fila_actual.fin_descarga_camion_f2 = 0;
 
         // fin de mantenimiento
+        fila_actual.inicio_mantenimiento = fila_actual.reloj_dias % 5 == 0 ? 59.99 : 0
         fila_actual.t_mantenimiento = 0;
         fila_actual.fin_mantenimiento = 0;
 
@@ -4865,7 +4872,7 @@ export class Simulador {
         fila_actual.ferry_1 = {
             estado: Estaticas.E_LIBRE,
             // es multiplo de 5
-            mantenimiento: fila_anterior.reloj_dias % 5 == 0 && fila_anterior.ultimo_mantenimiento != 1 ? true : false,
+            mantenimiento: fila_actual.reloj_dias % 5 == 0 && fila_anterior.ultimo_mantenimiento != 1 ? true : false,
             capacidad_restante: fila_anterior.ferry_1.capacidad_restante,
             localizacion: Estaticas.L_CONTINENTE,
             ult_loc_tierra: Estaticas.L_CONTINENTE
@@ -4873,13 +4880,13 @@ export class Simulador {
 
         fila_actual.ferry_2 = {
             estado: Estaticas.E_LIBRE,
-            mantenimiento: fila_anterior.reloj_dias % 5 == 0 && fila_anterior.ultimo_mantenimiento == 1 ? true : false,
+            mantenimiento: fila_actual.reloj_dias % 5 == 0 && fila_anterior.ultimo_mantenimiento == 1 ? true : false,
             capacidad_restante: fila_anterior.ferry_2.capacidad_restante,
             localizacion: Estaticas.L_CONTINENTE,
             ult_loc_tierra: Estaticas.L_CONTINENTE
         }
 
-        fila_actual.ultimo_mantenimiento = fila_actual.ferry_1.mantenimiento ? 1 : fila_actual.ferry_2.mantenimiento ? 2 : 0; // que ferry sufrio el ultimo mantenimiento, valores: 1 o 2
+        fila_actual.ultimo_mantenimiento = fila_actual.ferry_1.mantenimiento ? 1 : fila_actual.ferry_2.mantenimiento ? 2 : fila_anterior.ultimo_mantenimiento; // que ferry sufrio el ultimo mantenimiento, valores: 1 o 2
         fila_actual.hora_salida_ferry_1 = 0;
         fila_actual.hora_salida_estimada_ferry_2 = 0;
         fila_actual.cola_continente = fila_anterior.cola_continente;
@@ -4915,4 +4922,219 @@ export class Simulador {
         this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
+
+    // 21er tipo de evento: Inicio de mantenimiento
+    inicio_mantenimiento(fila_anterior) {
+        let fila_actual = structuredClone(fila_anterior);
+
+        // paso 1: establecer los datos del evento
+        fila_actual.nroEvento = fila_anterior.nroEvento + 1;
+        fila_actual.tipo_evento = `${Estaticas.E_INICIO_MANTENIMIENTO} ferry: ${fila_anterior.ultimo_mantenimiento}`;
+        fila_actual.reloj_dias = fila_anterior.reloj_dias;
+        fila_actual.reloj_mins = fila_anterior.inicio_mantenimiento;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
+        // paso 1.5: resetear los valores pertinentes al inicio de mantenimiento
+        fila_actual.inicio_mantenimiento = 0;
+
+        // paso 2: setear el ferry en mantenimiento
+        fila_actual.t_mantenimiento = 300.01;
+        fila_actual.fin_mantenimiento = fila_actual.t_mantenimiento + fila_actual.reloj_mins;
+
+        if (fila_anterior.ultimo_mantenimiento == 1) {
+            fila_actual.ferry_1.mantenimiento = true;
+            fila_actual.ferry_1.estado = Estaticas.E_MANTENIMIENTO;
+        }
+
+        if (fila_anterior.ultimo_mantenimiento == 2) {
+            fila_actual.ferry_2.mantenimiento = true;
+            fila_actual.ferry_2.estado = Estaticas.E_MANTENIMIENTO;
+        }
+
+        this.array.push(fila_actual);
+        this.array_a_mostrar.push(fila_actual);
+        return fila_actual;
+    }
+
+    // 22do tipo de evento: Fin de mantenimiento
+    fin_mantenimiento(fila_anterior) {
+        let fila_actual = structuredClone(fila_anterior);
+
+        // paso 1: establecer los datos del evento
+        fila_actual.nroEvento = fila_anterior.nroEvento + 1;
+        fila_actual.tipo_evento = `${Estaticas.E_FIN_MANTENIMIENTO} ferry: ${fila_anterior.ultimo_mantenimiento}`;
+        fila_actual.reloj_dias = fila_anterior.reloj_dias;
+        fila_actual.reloj_mins = fila_anterior.fin_mantenimiento
+        fila_actual.fin_mantenimiento = 0;
+
+        // paso 1.b: resetear todos los rnds de la fila actual
+        this.resetAllRnds(fila_actual);
+
+        // paso 1.5: resetear los valores pertinentes al fin de mantenimiento
+        fila_actual.fin_mantenimiento = 0;
+
+        // paso 2: buscar el ferry que termino el mantenimiento
+        if (fila_anterior.ferry_1.estado == Estaticas.E_MANTENIMIENTO) {
+            fila_actual.ferry_1.mantenimiento = false;
+
+            // si el ferry 1 estaba lleno
+            if (fila_anterior.ferry_1.capacidad_restante == 0) {
+                // entonces se va a la isla
+                fila_actual.ferry_1.estado = Estaticas.E_VIAJANDO;
+                fila_actual.ferry_1.localizacion = Estaticas.L_OCEANO;
+                fila_actual.clientes.filter(clte => clte.ferry_id == 1).forEach(clte => clte.estado = Estaticas.E_VIAJANDO_FERRY);
+                fila_actual.clientes.filter(clte => clte.ferry_id == 1).forEach(clte => clte.localizacion = Estaticas.L_OCEANO);
+
+                // calcular el tiempo de recorrido del ferry 1
+                fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
+                fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
+                fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
+                fila_actual.fin_recorrido_ferry_1 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+            } else {
+                // tiene o uno o mas espacios
+                // un solo espacio
+                if (fila_anterior.ferry_1.capacidad_restante == 1) {
+                    // pregunto si en la cola continente hay algun AUTO esperando carga
+                    let auto = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.localizacion == Estaticas.L_CONTINENTE && clte.tipo == Estaticas.T_AUTO);
+                    if (auto) { // hay un auto
+                        // cargar el auto
+                        fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                        fila_actual.ferry_1.capacidad_restante -= 1;
+                        fila_actual.clientes.find(clte => clte.id == auto.id).estado = Estaticas.E_SIENDO_CARGADO;
+                        fila_actual.clientes.find(clte => clte.id == auto.id).ferry_id = 1;
+                        fila_actual.cola_continente -= 1;
+                    } else { // no hay auto
+                        // ferry 1 libre
+                        fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
+                    }
+                } else { // mas espacios
+                    // pregunto si hay cola en el continente
+                    if (fila_anterior.cola_continente >= 1) {
+                        // hay cola, busco el primero de la cola
+                        let auto = this.buscar_auto_a_cargar_en_continente(fila_anterior);
+                        if (auto) {
+                            if (auto.tipo == Estaticas.T_CAMION) {
+                                // cargar el camion
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                                fila_actual.ferry_1.capacidad_restante -= 2;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).ferry_id = 1;
+                                fila_actual.cola_continente -= 1;
+
+                                // calcular el tiempo de carga del camion
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f1 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
+                            } else {
+                                // es auto
+                                // cargar el auto
+                                fila_actual.ferry_1.estado = Estaticas.E_CARGANDO;
+                                fila_actual.ferry_1.capacidad_restante -= 1;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).ferry_id = 1;
+                                fila_actual.cola_continente -= 1;
+
+                                // calcular el tiempo de carga del auto
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f1 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+                            }
+                        } else {
+                            // no hay cola, ferry libre
+                            fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
+                        }
+                    } else {
+                        // no hay cola, ferry libre
+                        fila_actual.ferry_1.estado = Estaticas.E_LIBRE;
+                    }
+                }
+            }
+        } else {
+            fila_actual.ferry_2.mantenimiento = false;
+
+            // si el ferry 2 estaba lleno
+            if (fila_anterior.ferry_2.capacidad_restante == 0) {
+                // entonces se va a la isla
+                fila_actual.ferry_2.estado = Estaticas.E_VIAJANDO;
+                fila_actual.ferry_2.localizacion = Estaticas.L_OCEANO;
+                fila_actual.clientes.filter(clte => clte.ferry_id == 2).forEach(clte => clte.estado = Estaticas.E_VIAJANDO_FERRY);
+                fila_actual.clientes.filter(clte => clte.ferry_id == 2).forEach(clte => clte.localizacion = Estaticas.L_OCEANO);
+
+                // calcular el tiempo de recorrido del ferry 2
+                fila_actual.rnd1_fin_recorrido = this.generador.generarNumeroAleatorio();
+                fila_actual.rnd2_fin_recorrido = this.generador.generarNumeroAleatorio();
+                fila_actual.t_fin_recorrido = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_recorrido, SParametros.getInstance().desviacion_recorrido, fila_actual.rnd1_fin_recorrido, fila_actual.rnd2_fin_recorrido);
+                fila_actual.fin_recorrido_ferry_2 = fila_actual.t_fin_recorrido + fila_actual.reloj_mins;
+            } else {
+                // tiene o uno o mas espacios
+                // un solo espacio
+                if (fila_anterior.ferry_2.capacidad_restante == 1) {
+                    // pregunto si en la cola continente hay algun AUTO esperando carga
+                    let auto = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.localizacion == Estaticas.L_CONTINENTE && clte.tipo == Estaticas.T_AUTO);
+                    if (auto) { // hay un auto
+                        // cargar el auto
+                        fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                        fila_actual.ferry_2.capacidad_restante -= 1;
+                        fila_actual.clientes.find(clte => clte.id == auto.id).estado = Estaticas.E_SIENDO_CARGADO;
+                        fila_actual.clientes.find(clte => clte.id == auto.id).ferry_id = 2;
+                        fila_actual.cola_continente -= 1;
+                    } else { // no hay auto
+                        // ferry 2 libre
+                        fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
+                    }
+                } else { // mas espacios
+                    // pregunto si hay cola en el continente
+                    if (fila_anterior.cola_continente >= 1) {
+                        // hay cola, busco el primero de la cola
+                        let auto = this.buscar_auto_a_cargar_en_continente(fila_anterior);
+                        if (auto) {
+                            if (auto.tipo == Estaticas.T_CAMION) {
+                                // cargar el camion
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                                fila_actual.ferry_2.capacidad_restante -= 2;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).ferry_id = 2;
+                                fila_actual.cola_continente -= 1;
+
+                                // calcular el tiempo de carga del camion
+                                fila_actual.rnd1_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_camion = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_camion = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_camion, SParametros.getInstance().desviacion_carga_camion, fila_actual.rnd1_fin_carga_camion, fila_actual.rnd2_fin_carga_camion);
+                                fila_actual.fin_carga_camion_f2 = fila_actual.t_fin_carga_camion + fila_actual.reloj_mins;
+                            } else {
+                                // es auto
+                                // cargar el auto
+                                fila_actual.ferry_2.estado = Estaticas.E_CARGANDO;
+                                fila_actual.ferry_2.capacidad_restante -= 1;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).estado = Estaticas.E_SIENDO_CARGADO;
+                                fila_actual.clientes.find(clte => clte.id == auto.id).ferry_id = 2;
+                                fila_actual.cola_continente -= 1;
+
+                                // calcular el tiempo de carga del auto
+                                fila_actual.rnd1_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.rnd2_fin_carga_auto = this.generador.generarNumeroAleatorio();
+                                fila_actual.t_fin_carga_auto = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_carga_auto, SParametros.getInstance().desviacion_carga_auto, fila_actual.rnd1_fin_carga_auto, fila_actual.rnd2_fin_carga_auto);
+                                fila_actual.fin_carga_auto_f2 = fila_actual.t_fin_carga_auto + fila_actual.reloj_mins;
+                            }
+                        } else {
+                            // no hay cola, ferry libre
+                            fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
+                        }
+                    } else {
+                        // no hay cola, ferry libre
+                        fila_actual.ferry_2.estado = Estaticas.E_LIBRE;
+                    }
+                }
+            }
+        }
+
+        this.array.push(fila_actual);
+        this.array_a_mostrar.push(fila_actual);
+        return fila_actual;
+    }
+
 }
