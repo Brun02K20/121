@@ -4392,7 +4392,7 @@ export class Simulador {
     simular() {
         try {
             let iteracion = 0
-            while (iteracion < 300) {
+            while (iteracion < 1000) {
                 iteracion += 1;
                 let proximo_evento = this.determinar_proximo_evento(this.array[this.array.length - 1]);
 
