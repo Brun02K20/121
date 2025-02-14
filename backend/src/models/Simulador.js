@@ -808,7 +808,7 @@ export class Simulador {
                                 // por aca no entra el camion, pero puede o no entrar mas nada o entrar un auto
                                 if (fila_anterior.ferry_1.capacidad_restante == 1) {
                                     // pregunto si hay un auto esperando en la cola del continente
-                                    let auto_esperando = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_CONTINENTE);
+                                    let auto_esperando = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_CONTINENTE);
                                     if (auto_esperando) {
                                         // hay un auto esperando en la cola del continente y hay justo un espacio en el ferry 2
                                         // entonces cargo el auto
@@ -1044,7 +1044,7 @@ export class Simulador {
                                 // si no hay 2 espacios es porque hay o 1 o 0, si hay 0 ya lo hicimos, pero si hay 1:
                                 if (fila_anterior.ferry_1.capacidad_restante == 1) {
                                     // pregunto si hay un auto esperando en la cola de la isla
-                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
+                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
                                     if (auto_esperando) {
                                         // hay un auto esperando en la cola de la isla y hay justo un espacio en el ferry 1
                                         // entonces cargo el auto
@@ -1332,7 +1332,7 @@ export class Simulador {
                                 // la capacidad aca tbn puede ser 1: 
                                 if (fila_anterior.ferry_2.capacidad_restante == 1) {
                                     // pregunto si hay un auto esperando en la cola del continente
-                                    let auto_esperando = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_CONTINENTE);
+                                    let auto_esperando = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_CONTINENTE);
                                     if (auto_esperando) {
                                         // hay un auto esperando en la cola del continente y hay justo un espacio en el ferry 2
                                         // entonces cargo el auto
@@ -1560,7 +1560,7 @@ export class Simulador {
                                 // si no hay 2 espacios es porque hay o 1 o 0, si hay 0 ya lo hicimos, pero si hay 1:
                                 if (fila_anterior.ferry_2.capacidad_restante == 1) {
                                     // pregunto si hay un auto esperando en la cola de la isla
-                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
+                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
                                     if (auto_esperando) {
                                         // hay un auto esperando en la cola de la isla y hay justo un espacio en el ferry 2
                                         // entonces cargo el auto
@@ -2072,7 +2072,7 @@ export class Simulador {
                                 // si no hay 2 espacios es porque hay o 1 o 0, si hay 0 ya lo hicimos, pero si hay 1:
                                 if (fila_anterior.ferry_1.capacidad_restante == 1) {
                                     // pregunto si hay un auto esperando en la cola de la isla
-                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
+                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
                                     if (auto_esperando) {
                                         // hay un auto esperando en la cola de la isla y hay justo un espacio en el ferry 1
                                         // entonces cargo el auto
@@ -2358,7 +2358,7 @@ export class Simulador {
                                 // la capacidad aca tbn puede ser 1: 
                                 if (fila_anterior.ferry_2.capacidad_restante == 1) {
                                     // pregunto si hay un auto esperando en la cola del continente
-                                    let auto_esperando = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_CONTINENTE);
+                                    let auto_esperando = fila_actual.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_CONTINENTE);
                                     if (auto_esperando) {
                                         // hay un auto esperando en la cola del continente y hay justo un espacio en el ferry 2
                                         // entonces cargo el auto
@@ -2586,7 +2586,7 @@ export class Simulador {
                                 // si no hay 2 espacios es porque hay o 1 o 0, si hay 0 ya lo hicimos, pero si hay 1:
                                 if (fila_anterior.ferry_2.capacidad_restante == 1) {
                                     // pregunto si hay un auto esperando en la cola de la isla
-                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_VIAJE && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
+                                    let auto_esperando = fila_anterior.clientes.find(clte => clte.estado == Estaticas.E_ESPERANDO_CARGA && clte.tipo == Estaticas.T_AUTO && clte.localizacion == Estaticas.L_ISLA);
                                     if (auto_esperando) {
                                         // hay un auto esperando en la cola de la isla y hay justo un espacio en el ferry 2
                                         // entonces cargo el auto
@@ -2838,7 +2838,7 @@ export class Simulador {
                     fila_actual.fin_descarga_camion_f1 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 1 en 2
-                    fila_actual.ferry_1.capacidad_restante += 2;
+                    fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 2;
                 } else {
                     // es auto
                     // calcular el tiempo de descarga del auto en la isla (ferry 1)
@@ -2848,7 +2848,7 @@ export class Simulador {
                     fila_actual.fin_descarga_auto_f1 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 1 en 1
-                    fila_actual.ferry_1.capacidad_restante += 1;
+                    fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 1;
                 }
             } else {
                 // Partio de isla a continente
@@ -2883,7 +2883,7 @@ export class Simulador {
                     fila_actual.fin_descarga_camion_f1 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 1 en 2
-                    fila_actual.ferry_1.capacidad_restante += 2;
+                    fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 2;
                 } else {
                     // es auto
                     // calcular el tiempo de descarga del auto en la isla (ferry 1)
@@ -2893,7 +2893,7 @@ export class Simulador {
                     fila_actual.fin_descarga_auto_f1 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 1 en 1
-                    fila_actual.ferry_1.capacidad_restante += 1;
+                    fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 1;
                 }
             }
         }
@@ -2965,7 +2965,7 @@ export class Simulador {
                     fila_actual.fin_descarga_camion_f2 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 2 en 2
-                    fila_actual.ferry_2.capacidad_restante += 2;
+                    fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 2;
                 } else {
                     // es auto
                     // calcular el tiempo de descarga del auto en la isla (ferry 2)
@@ -2975,7 +2975,7 @@ export class Simulador {
                     fila_actual.fin_descarga_auto_f2 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 2 en 1
-                    fila_actual.ferry_2.capacidad_restante += 1;
+                    fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 1;
                 }
             } else {
                 // Partio de isla a continente
@@ -3009,7 +3009,7 @@ export class Simulador {
                     fila_actual.fin_descarga_camion_f2 = fila_actual.t_fin_descarga_camion + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 2 en 2
-                    fila_actual.ferry_2.capacidad_restante += 2;
+                    fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 2;
                 } else {
                     // es auto
                     // calcular el tiempo de descarga del auto en la isla (ferry 2)
@@ -3019,7 +3019,7 @@ export class Simulador {
                     fila_actual.fin_descarga_auto_f2 = fila_actual.t_fin_descarga_auto + fila_actual.reloj_mins;
 
                     // incrementar la capacidad del ferry 2 en 1
-                    fila_actual.ferry_2.capacidad_restante += 1;
+                    fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 1;
                 }
             }
         }
@@ -3242,7 +3242,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 1 en 2
-                        fila_actual.ferry_1.capacidad_restante += 2;
+                        fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 2;
 
                         // setear el estado del ferry 1 a DESCARGANDO
                         fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
@@ -3258,7 +3258,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 1 en 1
-                        fila_actual.ferry_1.capacidad_restante += 1;
+                        fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 1;
 
                         // setear el estado del ferry 1 a DESCARGANDO
                         fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
@@ -3485,7 +3485,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 2 en 2
-                        fila_actual.ferry_2.capacidad_restante += 2;
+                        fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 2;
 
                         // setear el estado del ferry 2 a DESCARGANDO
                         fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
@@ -3501,7 +3501,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 2 en 1
-                        fila_actual.ferry_2.capacidad_restante += 1;
+                        fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 1;
 
                         // setear el estado del ferry 2 a DESCARGANDO
                         fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
@@ -3729,7 +3729,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 1 en 2
-                        fila_actual.ferry_1.capacidad_restante += 2;
+                        fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 2;
 
                         // setear el estado del ferry 1 a DESCARGANDO
                         fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
@@ -3745,7 +3745,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 1 en 1
-                        fila_actual.ferry_1.capacidad_restante += 1;
+                        fila_actual.ferry_1.capacidad_restante = fila_anterior.ferry_1.capacidad_restante + 1;
 
                         // setear el estado del ferry 1 a DESCARGANDO
                         fila_actual.ferry_1.estado = Estaticas.E_DESCARGANDO;
@@ -3972,7 +3972,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 2 en 2
-                        fila_actual.ferry_2.capacidad_restante += 2;
+                        fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 2;
 
                         // setear el estado del ferry 2 a DESCARGANDO
                         fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
@@ -3988,7 +3988,7 @@ export class Simulador {
                         fila_actual.clientes.find(clte => clte.id == siguiente_auto_a_descargar.id).estado = Estaticas.E_SIENDO_DESCARGADO;
 
                         // incrementar la capacidad del ferry 2 en 1
-                        fila_actual.ferry_2.capacidad_restante += 1;
+                        fila_actual.ferry_2.capacidad_restante = fila_anterior.ferry_2.capacidad_restante + 1;
 
                         // setear el estado del ferry 2 a DESCARGANDO
                         fila_actual.ferry_2.estado = Estaticas.E_DESCARGANDO;
@@ -4395,70 +4395,73 @@ export class Simulador {
             while (iteracion < 300) {
                 iteracion += 1;
                 let proximo_evento = this.determinar_proximo_evento(this.array[this.array.length - 1]);
-                console.log(proximo_evento);
-                // proximo_evento = {tipo: "", valor: 0}
 
-                switch (proximo_evento.tipo) {
-                    case Estaticas.E_LLEGADA_AUTO_CONT:
-                        this.llegada_auto_al_continente(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_LLEGADA_CAMION_CONT:
-                        this.llegada_camion_al_continente(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FUNCIONAMIENTO_FERRYS:
-                        this.funcionamiento_ferrys(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_CARGA_AUTO_F1:
-                        this.fin_carga_auto_f1(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_CARGA_AUTO_F2:
-                        this.fin_carga_auto_f2(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_CARGA_CAMION_F1:
-                        this.fin_carga_camion_f1(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_CARGA_CAMION_F2:
-                        this.fin_carga_camion_f2(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_RECORRIDO_FERRY_1:
-                        this.fin_recorrido_f1(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_RECORRIDO_FERRY_2:
-                        this.fin_recorrido_f2(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_DESCARGA_AUTO_F1:
-                        this.fin_descarga_auto_ferry1(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_DESCARGA_AUTO_F2:
-                        this.fin_descarga_auto_ferry2(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_DESCARGA_CAMION_F1:
-                        this.fin_descarga_camion_ferry1(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_DESCARGA_CAMION_F2:
-                        this.fin_descarga_camion_ferry2(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_HABILITACION_LLEGADAS_ISLA:
-                        this.habilitar_llegadas_isla(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_LLEGADA_AUTO_ISLA:
-                        this.llegada_auto_a_isla(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_LLEGADA_CAMION_ISLA:
-                        this.llegada_camion_a_isla(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_CORTE_LLEGADAS_ISLA:
-                        this.corte_llegadas_isla(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_CORTE_LLEGADAS_CONT:
-                        this.corte_llegadas_cont(this.array[this.array.length - 1]);
-                        break;
-                    case Estaticas.E_FIN_ACTIVIDAD_DIA:
-                        this.chequear_fin_dia(this.array[this.array.length - 1]);
-                        break;
-                    default:
-                        console.log("No hay eventos pendientes");
-                        break;
+                // ya termino el dia, entonces debo crear un nuevo dia
+                if ((this.array[this.array.length - 1].fin_act_f1 && this.array[this.array.length - 1].fin_act_f2) || !proximo_evento.tipo) {
+                    this.nuevo_dia(this.array[this.array.length - 1]);
+                } else {
+                    switch (proximo_evento.tipo) {
+                        case Estaticas.E_LLEGADA_AUTO_CONT:
+                            this.llegada_auto_al_continente(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_LLEGADA_CAMION_CONT:
+                            this.llegada_camion_al_continente(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FUNCIONAMIENTO_FERRYS:
+                            this.funcionamiento_ferrys(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_CARGA_AUTO_F1:
+                            this.fin_carga_auto_f1(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_CARGA_AUTO_F2:
+                            this.fin_carga_auto_f2(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_CARGA_CAMION_F1:
+                            this.fin_carga_camion_f1(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_CARGA_CAMION_F2:
+                            this.fin_carga_camion_f2(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_RECORRIDO_FERRY_1:
+                            this.fin_recorrido_f1(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_RECORRIDO_FERRY_2:
+                            this.fin_recorrido_f2(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_DESCARGA_AUTO_F1:
+                            this.fin_descarga_auto_ferry1(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_DESCARGA_AUTO_F2:
+                            this.fin_descarga_auto_ferry2(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_DESCARGA_CAMION_F1:
+                            this.fin_descarga_camion_ferry1(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_DESCARGA_CAMION_F2:
+                            this.fin_descarga_camion_ferry2(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_HABILITACION_LLEGADAS_ISLA:
+                            this.habilitar_llegadas_isla(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_LLEGADA_AUTO_ISLA:
+                            this.llegada_auto_a_isla(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_LLEGADA_CAMION_ISLA:
+                            this.llegada_camion_a_isla(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_CORTE_LLEGADAS_ISLA:
+                            this.corte_llegadas_isla(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_CORTE_LLEGADAS_CONT:
+                            this.corte_llegadas_cont(this.array[this.array.length - 1]);
+                            break;
+                        case Estaticas.E_FIN_ACTIVIDAD_DIA:
+                            this.chequear_fin_dia(this.array[this.array.length - 1]);
+                            break;
+                        default:
+                            console.log("No hay eventos pendientes");
+                            break;
+                    }
                 }
 
                 // si el array tiene mas de 2 elementos, eliminar el mas antiguo
@@ -4585,10 +4588,10 @@ export class Simulador {
         let minimo = Math.min(...valores.map(val => val.valor));
         let proximo = valores.find(val => val.valor === minimo);
 
-        console.log("q pasa: ", proximo);
+        console.log("determinado: ", proximo);
 
-        proximo_evento.tipo = proximo.tipo;
-        proximo_evento.valor = proximo.valor;
+        proximo_evento.tipo = proximo?.tipo;
+        proximo_evento.valor = proximo?.valor;
 
         return proximo_evento;
     }
@@ -4634,5 +4637,142 @@ export class Simulador {
         fila_actual.rnd2_llegada_camiones_isla = 0;
         fila_actual.t_llegada_camiones_isla = 0;
 
+    }
+
+    nuevo_dia(fila_anterior) {
+        let fila_actual = structuredClone(fila_anterior);
+
+        fila_actual.nroEvento = fila_anterior.nroEvento + 1;
+        fila_actual.tipo_evento = `Inicio de un nuevo dia ${fila_anterior.reloj_dias + 1}`;
+        fila_actual.reloj_dias = fila_anterior.reloj_dias + 1;
+        fila_actual.reloj_mins = 0;
+
+        // Eventos
+        // Funcionamiento de Ferrys
+        fila_actual.func_ferrys = 60;
+
+        // Llegada de autos al continente
+        fila_actual.rnd1_llegada_autos_cont = this.generador.generarNumeroAleatorio();
+        fila_actual.rnd2_llegada_autos_cont = this.generador.generarNumeroAleatorio();
+        fila_actual.t_llegada_autos_cont = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_llegada_auto_cont_manana, SParametros.getInstance().desviacion_llegada_auto_cont_manana, this.iteracion0.rnd1_llegada_autos_cont, this.iteracion0.rnd2_llegada_autos_cont);
+        fila_actual.prox_llegada_autos_cont = this.iteracion0.t_llegada_autos_cont + this.iteracion0.reloj_mins;
+
+        // Llegada de camiones al continente
+        fila_actual.rnd1_llegada_camiones_cont = this.generador.generarNumeroAleatorio();
+        fila_actual.rnd2_llegada_camiones_cont = this.generador.generarNumeroAleatorio();
+        fila_actual.t_llegada_camiones_cont = this.generador.generar_tiempo_box_muller(SParametros.getInstance().media_llegada_camion_cont_manana, SParametros.getInstance().desviacion_llegada_camion_cont_manana, this.iteracion0.rnd1_llegada_camiones_cont, this.iteracion0.rnd2_llegada_camiones_cont);
+        fila_actual.prox_llegada_camiones_cont = this.iteracion0.t_llegada_camiones_cont + this.iteracion0.reloj_mins;
+
+        // Llegada de autos a la isla
+        fila_actual.rnd1_llegada_autos_isla = 0;
+        fila_actual.rnd2_llegada_autos_isla = 0;
+        fila_actual.t_llegada_autos_isla = 0;
+        fila_actual.prox_llegada_autos_isla = 0;
+
+        // Llegada de camiones a la isla
+        fila_actual.rnd1_llegada_camiones_isla = 0;
+        fila_actual.rnd2_llegada_camiones_isla = 0;
+        fila_actual.t_llegada_camiones_isla = 0;
+        fila_actual.prox_llegada_camiones_isla = 0;
+
+        // Fin de carga de auto(i);i=1,2
+        fila_actual.rnd1_fin_carga_auto = 0;
+        fila_actual.rnd2_fin_carga_auto = 0;
+        fila_actual.t_fin_carga_auto = 0;
+        fila_actual.fin_carga_auto_f1 = 0;
+        fila_actual.fin_carga_auto_f2 = 0;
+
+        // Fin de carga de camion(i);i=1,2
+        fila_actual.rnd1_fin_carga_camion = 0;
+        fila_actual.rnd2_fin_carga_camion = 0;
+        fila_actual.t_fin_carga_camion = 0;
+        fila_actual.fin_carga_camion_f1 = 0;
+        fila_actual.fin_carga_camion_f2 = 0;
+
+        // Fin de descarga de auto(i);i=1,2
+        fila_actual.rnd1_fin_descarga_auto = 0;
+        fila_actual.rnd2_fin_descarga_auto = 0;
+        fila_actual.t_fin_descarga_auto = 0;
+        fila_actual.fin_descarga_auto_f1 = 0;
+        fila_actual.fin_descarga_auto_f2 = 0;
+
+        // Fin de descarga de camion(i);i=1,2
+        fila_actual.rnd1_fin_descarga_camion = 0;
+        fila_actual.rnd2_fin_descarga_camion = 0;
+        fila_actual.t_fin_descarga_camion = 0;
+        fila_actual.fin_descarga_camion_f1 = 0;
+        fila_actual.fin_descarga_camion_f2 = 0;
+
+        // fin de mantenimiento
+        fila_actual.t_mantenimiento = 0;
+        fila_actual.fin_mantenimiento = 0;
+
+        // chequeo habilitacion para llegadas_isla y corte de llegadas a continente y a isla
+        fila_actual.habilitacion_llegadas_isla = 180;
+        fila_actual.corte_llegadas_isla = 660;
+        fila_actual.corte_llegadas_cont = 750;
+        fila_actual.fin_act_f1 = false; // cuando estas 2 variables sean true, se termina el dia
+        fila_actual.fin_act_f2 = false;
+        fila_actual.chequeo_fin_act_dia = 780;
+
+        // fin de recorrido para los 2 ferrys
+        fila_actual.rnd1_fin_recorrido = 0;
+        fila_actual.rnd2_fin_recorrido = 0;
+        fila_actual.t_fin_recorrido = 0;
+        fila_actual.fin_recorrido_ferry_1 = 0;
+        fila_actual.fin_recorrido_ferry_2 = 0;
+
+        // Servidores: Ferry 1 y Ferry 2
+        fila_actual.ferry_1 = {
+            estado: Estaticas.E_LIBRE,
+            // es multiplo de 5
+            mantenimiento: fila_anterior.reloj_dias % 5 == 0 && fila_anterior.ultimo_mantenimiento != 1 ? true : false,
+            capacidad_restante: fila_anterior.ferry_1.capacidad_restante,
+            localizacion: Estaticas.L_CONTINENTE,
+            ult_loc_tierra: Estaticas.L_CONTINENTE
+        }
+
+        fila_actual.ferry_2 = {
+            estado: Estaticas.E_LIBRE,
+            mantenimiento: fila_anterior.reloj_dias % 5 == 0 && fila_anterior.ultimo_mantenimiento == 1 ? true : false,
+            capacidad_restante: fila_anterior.ferry_2.capacidad_restante,
+            localizacion: Estaticas.L_CONTINENTE,
+            ult_loc_tierra: Estaticas.L_CONTINENTE
+        }
+
+        fila_actual.ultimo_mantenimiento = fila_actual.ferry_1.mantenimiento ? 1 : fila_actual.ferry_2.mantenimiento ? 2 : 0; // que ferry sufrio el ultimo mantenimiento, valores: 1 o 2
+        fila_actual.hora_salida_ferry_1 = 0;
+        fila_actual.hora_salida_estimada_ferry_2 = 0;
+        fila_actual.cola_continente = fila_anterior.cola_continente;
+        fila_actual.cola_isla = fila_anterior.cola_isla;
+
+        // Estadisticas
+        //A: Cola maxima en continente y en isla
+        fila_actual.cola_maxima_cont = fila_anterior.cola_maxima_cont;
+        fila_actual.cola_maxima_isla = fila_anterior.cola_maxima_isla;
+
+        // B: Promedio de autos y de autobuses en continente y en isla
+        // Autos: 
+        fila_actual.acum_autos_cont = fila_anterior.acum_autos_cont; // de continente a isla
+        fila_actual.acum_autos_isla = fila_anterior.acum_autos_isla; // de isla a continente
+        fila_actual.cantidad_dias = fila_actual.reloj_dias;
+        fila_actual.promedio_autos_cont = fila_anterior.acum_autos_cont / fila_actual.cantidad_dias;
+        fila_actual.promedio_autos_isla = fila_anterior.acum_autos_isla / fila_actual.cantidad_dias;
+
+        // Camiones
+        fila_actual.acum_camiones_cont = fila_anterior.acum_camiones_cont; // de continente a isla
+        fila_actual.acum_camiones_isla = fila_anterior.acum_camiones_isla; // de isla a continente
+        fila_actual.promedio_camiones_cont = fila_anterior.acum_camiones_cont / fila_actual.cantidad_dias;
+        fila_actual.promedio_camiones_isla = fila_anterior.acum_camiones_isla / fila_actual.cantidad_dias;
+
+        console.log("cltes que esperan: ", fila_anterior.clientes.length)
+
+        fila_anterior.acum_autos_esperan_hasta_dia_sgte += fila_anterior.clientes.length;
+        fila_actual.promedio_autos_esperan_hasta_dia_sgte = fila_anterior.acum_autos_esperan_hasta_dia_sgte / fila_anterior.reloj_dias
+        fila_actual.acum_autos_esperan_hasta_dia_sgte = fila_anterior.acum_autos_esperan_hasta_dia_sgte;
+
+        this.array.push(fila_actual);
+        this.array_a_mostrar.push(fila_actual);
+        return fila_actual;
     }
 }
