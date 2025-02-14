@@ -347,7 +347,6 @@ export class Simulador {
         }
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual
     }
 
@@ -499,7 +498,6 @@ export class Simulador {
         }
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual
     }
 
@@ -938,7 +936,6 @@ export class Simulador {
         }
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual
     }
 
@@ -1437,7 +1434,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -1921,7 +1917,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -2419,7 +2414,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -2913,7 +2907,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -3042,7 +3035,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -3167,7 +3159,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -3409,7 +3400,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -3652,7 +3642,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -3896,7 +3885,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4139,7 +4127,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4301,7 +4288,6 @@ export class Simulador {
         fila_actual.clientes.push(auto);
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4421,7 +4407,6 @@ export class Simulador {
         fila_actual.clientes.push(auto);
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4454,7 +4439,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4487,7 +4471,6 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4520,84 +4503,85 @@ export class Simulador {
 
         // agregar la fila a la lista
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
-    simular() {
+    simular(cant_iteraciones_a_mostrar, dia_inicio_muestra, hora_inicio_muestra) {
         try {
             let iteracion = 0
-            while (this.array[this.array.length - 1].reloj_dias <= 11) {
+            let iteraciones_mostradas = 0;
+            while (this.array[this.array.length - 1].reloj_dias <= 31) {
                 iteracion += 1;
-                let proximo_evento = this.determinar_proximo_evento(this.array[this.array.length - 1]);
+                let estadoActual = this.array[this.array.length - 1];
+                let proximo_evento = this.determinar_proximo_evento(estadoActual);
 
                 // ya termino el dia, entonces debo crear un nuevo dia
-                if ((this.array[this.array.length - 1].fin_act_f1 && this.array[this.array.length - 1].fin_act_f2) || !proximo_evento.tipo) {
-                    this.nuevo_dia(this.array[this.array.length - 1]);
+                if ((estadoActual.fin_act_f1 && estadoActual.fin_act_f2) || !proximo_evento.tipo) {
+                    this.nuevo_dia(estadoActual);
                 } else {
                     switch (proximo_evento.tipo) {
                         case Estaticas.E_LLEGADA_AUTO_CONT:
-                            this.llegada_auto_al_continente(this.array[this.array.length - 1]);
+                            this.llegada_auto_al_continente(estadoActual);
                             break;
                         case Estaticas.E_LLEGADA_CAMION_CONT:
-                            this.llegada_camion_al_continente(this.array[this.array.length - 1]);
+                            this.llegada_camion_al_continente(estadoActual);
                             break;
                         case Estaticas.E_FUNCIONAMIENTO_FERRYS:
-                            this.funcionamiento_ferrys(this.array[this.array.length - 1]);
+                            this.funcionamiento_ferrys(estadoActual);
                             break;
                         case Estaticas.E_FIN_CARGA_AUTO_F1:
-                            this.fin_carga_auto_f1(this.array[this.array.length - 1]);
+                            this.fin_carga_auto_f1(estadoActual);
                             break;
                         case Estaticas.E_FIN_CARGA_AUTO_F2:
-                            this.fin_carga_auto_f2(this.array[this.array.length - 1]);
+                            this.fin_carga_auto_f2(estadoActual);
                             break;
                         case Estaticas.E_FIN_CARGA_CAMION_F1:
-                            this.fin_carga_camion_f1(this.array[this.array.length - 1]);
+                            this.fin_carga_camion_f1(estadoActual);
                             break;
                         case Estaticas.E_FIN_CARGA_CAMION_F2:
-                            this.fin_carga_camion_f2(this.array[this.array.length - 1]);
+                            this.fin_carga_camion_f2(estadoActual);
                             break;
                         case Estaticas.E_FIN_RECORRIDO_FERRY_1:
-                            this.fin_recorrido_f1(this.array[this.array.length - 1]);
+                            this.fin_recorrido_f1(estadoActual);
                             break;
                         case Estaticas.E_FIN_RECORRIDO_FERRY_2:
-                            this.fin_recorrido_f2(this.array[this.array.length - 1]);
+                            this.fin_recorrido_f2(estadoActual);
                             break;
                         case Estaticas.E_FIN_DESCARGA_AUTO_F1:
-                            this.fin_descarga_auto_ferry1(this.array[this.array.length - 1]);
+                            this.fin_descarga_auto_ferry1(estadoActual);
                             break;
                         case Estaticas.E_FIN_DESCARGA_AUTO_F2:
-                            this.fin_descarga_auto_ferry2(this.array[this.array.length - 1]);
+                            this.fin_descarga_auto_ferry2(estadoActual);
                             break;
                         case Estaticas.E_FIN_DESCARGA_CAMION_F1:
-                            this.fin_descarga_camion_ferry1(this.array[this.array.length - 1]);
+                            this.fin_descarga_camion_ferry1(estadoActual);
                             break;
                         case Estaticas.E_FIN_DESCARGA_CAMION_F2:
-                            this.fin_descarga_camion_ferry2(this.array[this.array.length - 1]);
+                            this.fin_descarga_camion_ferry2(estadoActual);
                             break;
                         case Estaticas.E_HABILITACION_LLEGADAS_ISLA:
-                            this.habilitar_llegadas_isla(this.array[this.array.length - 1]);
+                            this.habilitar_llegadas_isla(estadoActual);
                             break;
                         case Estaticas.E_LLEGADA_AUTO_ISLA:
-                            this.llegada_auto_a_isla(this.array[this.array.length - 1]);
+                            this.llegada_auto_a_isla(estadoActual);
                             break;
                         case Estaticas.E_LLEGADA_CAMION_ISLA:
-                            this.llegada_camion_a_isla(this.array[this.array.length - 1]);
+                            this.llegada_camion_a_isla(estadoActual);
                             break;
                         case Estaticas.E_CORTE_LLEGADAS_ISLA:
-                            this.corte_llegadas_isla(this.array[this.array.length - 1]);
+                            this.corte_llegadas_isla(estadoActual);
                             break;
                         case Estaticas.E_CORTE_LLEGADAS_CONT:
-                            this.corte_llegadas_cont(this.array[this.array.length - 1]);
+                            this.corte_llegadas_cont(estadoActual);
                             break;
                         case Estaticas.E_FIN_ACTIVIDAD_DIA:
-                            this.chequear_fin_dia(this.array[this.array.length - 1]);
+                            this.chequear_fin_dia(estadoActual);
                             break;
                         case Estaticas.E_INICIO_MANTENIMIENTO:
-                            this.inicio_mantenimiento(this.array[this.array.length - 1]);
+                            this.inicio_mantenimiento(estadoActual);
                             break;
                         case Estaticas.E_FIN_MANTENIMIENTO:
-                            this.fin_mantenimiento(this.array[this.array.length - 1]);
+                            this.fin_mantenimiento(estadoActual);
                             break;
                         default:
                             console.log("No hay eventos pendientes");
@@ -4605,10 +4589,31 @@ export class Simulador {
                     }
                 }
 
-                // si el array tiene mas de 2 elementos, eliminar el mas antiguo
+                // Una vez procesado el evento, el nuevo estado es el último de this.array
+                let nuevoEstado = this.array[this.array.length - 1];
+
+                // Si se cumple que el estado actual supera el umbral definido (dia y hora)
+                if (
+                    nuevoEstado.reloj_dias > dia_inicio_muestra ||
+                    (nuevoEstado.reloj_dias === dia_inicio_muestra && nuevoEstado.reloj_mins >= hora_inicio_muestra)
+                ) {
+                    // Se agregan hasta cant_iteraciones_a_mostrar iteraciones
+                    if (iteraciones_mostradas < cant_iteraciones_a_mostrar) {
+                        this.array_a_mostrar.push(nuevoEstado);
+                        iteraciones_mostradas++;
+                    }
+                }
+
+                // Se mantiene un máximo de 2 elementos en el array principal para optimizar memoria
                 if (this.array.length > 2) {
                     this.array.shift();
                 }
+            }
+
+            // Finalmente, se asegura que el último estado de la simulación esté en array_a_mostrar
+            let ultimoEstado = this.array[this.array.length - 1];
+            if (this.array_a_mostrar[this.array_a_mostrar.length - 1] !== ultimoEstado) {
+                this.array_a_mostrar.push(ultimoEstado);
             }
         } catch (error) {
             console.log(error);
@@ -4691,7 +4696,6 @@ export class Simulador {
         }
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4919,7 +4923,6 @@ export class Simulador {
         fila_actual.acum_autos_esperan_hasta_dia_sgte = fila_anterior.acum_autos_esperan_hasta_dia_sgte;
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -4954,7 +4957,6 @@ export class Simulador {
         }
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
@@ -5133,7 +5135,6 @@ export class Simulador {
         }
 
         this.array.push(fila_actual);
-        this.array_a_mostrar.push(fila_actual);
         return fila_actual;
     }
 
