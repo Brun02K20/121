@@ -520,8 +520,7 @@ export class Simulador {
         // los 2 ferrys estan libres o si hay alguno en mantenimiento. 
 
         // La capacidad de los ferrys en esta parte puede variar, puede ser su maximo o cualquier otra >= 0
-
-        if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE && fila_anterior.ferry_1.estado == Estaticas.E_LIBRE) {
+        if (fila_anterior.ferry_1.estado == Estaticas.E_LIBRE && fila_anterior.ferry_2.estado == Estaticas.E_LIBRE) {
             // pregunto si el fery 1 ya esta lleno
             if (fila_anterior.ferry_1.capacidad_restante == 0) {
                 // esta lleno
@@ -4200,7 +4199,7 @@ export class Simulador {
                 auto.estado = Estaticas.E_ESPERANDO_CARGA;
                 fila_actual.cola_isla += 1;
 
-                if (fila_actual.cola_isla > fila_anterior.cola_isla) {
+                if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
                     fila_actual.cola_maxima_isla = fila_actual.cola_isla;
                 }
             }
@@ -4243,11 +4242,19 @@ export class Simulador {
                             // si el ferry 2 no tiene espacio, a la cola
                             auto.estado = Estaticas.E_ESPERANDO_CARGA;
                             fila_actual.cola_isla += 1;
+
+                            if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                                fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                            }
                         }
                     } else {
                         // si el ferry 2 no esta libre o no esta en la isla, a la cola
                         auto.estado = Estaticas.E_ESPERANDO_CARGA;
                         fila_actual.cola_isla += 1;
+
+                        if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                            fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                        }
                     }
                 }
             } else {
@@ -4270,11 +4277,19 @@ export class Simulador {
                         // si el ferry 2 no tiene espacio, a la cola
                         auto.estado = Estaticas.E_ESPERANDO_CARGA;
                         fila_actual.cola_isla += 1;
+
+                        if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                            fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                        }
                     }
                 } else {
                     // si el ferry 2 no esta libre o no esta en la isla, a la cola
                     auto.estado = Estaticas.E_ESPERANDO_CARGA;
                     fila_actual.cola_isla += 1;
+
+                    if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                        fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                    }
                 }
             }
         }
@@ -4361,11 +4376,19 @@ export class Simulador {
                             // si el ferry 2 no tiene espacio, a la cola
                             auto.estado = Estaticas.E_ESPERANDO_CARGA;
                             fila_actual.cola_isla += 1;
+
+                            if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                                fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                            }
                         }
                     } else {
                         // si el ferry 2 no esta libre o no esta en la isla, a la cola
                         auto.estado = Estaticas.E_ESPERANDO_CARGA;
                         fila_actual.cola_isla += 1;
+
+                        if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                            fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                        }
                     }
                 }
             } else {
@@ -4388,11 +4411,19 @@ export class Simulador {
                         // si el ferry 2 no tiene espacio, a la cola
                         auto.estado = Estaticas.E_ESPERANDO_CARGA;
                         fila_actual.cola_isla += 1;
+
+                        if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                            fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                        }
                     }
                 } else {
                     // si el ferry 2 no esta libre o no esta en la isla, a la cola
                     auto.estado = Estaticas.E_ESPERANDO_CARGA;
                     fila_actual.cola_isla += 1;
+
+                    if (fila_actual.cola_isla > fila_anterior.cola_maxima_isla) {
+                        fila_actual.cola_maxima_isla = fila_actual.cola_isla;
+                    }
                 }
             }
         }
@@ -4510,7 +4541,7 @@ export class Simulador {
         try {
             let iteracion = 0
             let iteraciones_mostradas = 0;
-            while (this.array[this.array.length - 1].reloj_dias <= 31) {
+            while (this.array[this.array.length - 1].reloj_dias < 31) {
                 iteracion += 1;
                 let estadoActual = this.array[this.array.length - 1];
                 let proximo_evento = this.determinar_proximo_evento(estadoActual);
@@ -4616,6 +4647,7 @@ export class Simulador {
                 this.array_a_mostrar.push(ultimoEstado);
             }
         } catch (error) {
+            console.log("Error en el evento nro: ", this.array[this.array.length - 1].nroEvento);
             console.log(error);
         }
     }
@@ -4734,8 +4766,6 @@ export class Simulador {
 
         let minimo = Math.min(...valores.map(val => val.valor));
         let proximo = valores.find(val => val.valor === minimo);
-
-        console.log("determinado: ", proximo);
 
         proximo_evento.tipo = proximo?.tipo;
         proximo_evento.valor = proximo?.valor;
@@ -4914,8 +4944,6 @@ export class Simulador {
         fila_actual.acum_camiones_isla = fila_anterior.acum_camiones_isla; // de isla a continente
         fila_actual.promedio_camiones_cont = fila_anterior.acum_camiones_cont / fila_actual.cantidad_dias;
         fila_actual.promedio_camiones_isla = fila_anterior.acum_camiones_isla / fila_actual.cantidad_dias;
-
-        console.log("cltes que esperan: ", fila_anterior.clientes.length)
 
         fila_anterior.acum_autos_esperan_hasta_dia_sgte += fila_anterior.clientes.length;
         fila_anterior.promedio_autos_esperan_hasta_dia_sgte = fila_anterior.acum_autos_esperan_hasta_dia_sgte / fila_anterior.reloj_dias

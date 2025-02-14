@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Button, Table } from "react-bootstrap";
 import { ClientTable } from "../components/ClientTable";
+import { Reporte } from "../components/Reporte";
 
 const GeneralTable = ({ tabla }) => {
   const [show, setShow] = useState(false);
@@ -54,12 +55,12 @@ const GeneralTable = ({ tabla }) => {
             <th colSpan={5}>Fin recorrido (i=1,2)</th>
 
             <th colSpan={2}>Mantenimiento</th>
-            <th colSpan={5}>Habilitaciones y cortes</th>
+            <th colSpan={3}>Habilitaciones y cortes</th>
 
-            <th colSpan={5}>Información del ferry 1</th>
-            <th colSpan={5}>Información del ferry 2</th>
+            <th colSpan={4}>Información del ferry 1</th>
+            <th colSpan={4}>Información del ferry 2</th>
 
-            <th colSpan={3}>Información adicional ferrys</th>
+            <th rowSpan={2}>Ult mant</th>
 
             <th colSpan={2}>Colas</th>
 
@@ -130,24 +131,16 @@ const GeneralTable = ({ tabla }) => {
             <th>Hab llegadas isla</th>
             <th>Corte llegadas cont</th>
             <th>Corte llegadas isla</th>
-            <th>Fin act dia F1</th>
-            <th>Fin act dia F2</th>
 
             <th>Estado</th>
-            <th>Mantenimiento</th>
             <th>Cap rest</th>
             <th>Loc act</th>
             <th>Ult loc terr</th>
 
             <th>Estado</th>
-            <th>Mantenimiento</th>
             <th>Cap rest</th>
             <th>Loc act</th>
             <th>Ult loc terr</th>
-
-            <th>Ult mant</th>
-            <th>H salida F1</th>
-            <th>H salida estimada F2</th>
 
             <th>Cola cont</th>
             <th>Cola isla</th>
@@ -235,24 +228,18 @@ const GeneralTable = ({ tabla }) => {
               <td>{fila.habilitacion_llegadas_isla || ""}</td>
               <td>{fila.corte_llegadas_isla || ""}</td>
               <td>{fila.corte_llegadas_cont || ""}</td>
-              <td>{fila.fin_act_f1 === true ? "SI" : "NO"}</td>
-              <td>{fila.fin_act_f2 === true ? "SI" : "NO"}</td>
 
               <td>{fila.ferry_1.estado}</td>
-              <td>{fila.ferry_1.mantenimiento === true ? "SI" : "NO"}</td>
               <td>{fila.ferry_1.capacidad_restante}</td>
               <td>{fila.ferry_1.localizacion}</td>
               <td>{fila.ferry_1.ult_loc_tierra}</td>
 
               <td>{fila.ferry_2.estado}</td>
-              <td>{fila.ferry_2.mantenimiento === true ? "SI" : "NO"}</td>
               <td>{fila.ferry_2.capacidad_restante}</td>
               <td>{fila.ferry_2.localizacion}</td>
               <td>{fila.ferry_2.ult_loc_tierra}</td>
 
               <td>{fila.ultimo_mantenimiento}</td>
-              <td>{round(fila.hora_salida_ferry_1) || ""}</td>
-              <td>{round(fila.hora_salida_estimada_ferry_2) || ""}</td>
 
               <td>{fila.cola_continente}</td>
               <td>{fila.cola_isla}</td>
@@ -287,6 +274,8 @@ const GeneralTable = ({ tabla }) => {
       </Table>
 
       <ClientTable show={show} handleClose={handleClose} clientes={clientes} />
+
+      <Reporte data={tabla[tabla.length - 1]} />
     </>
   );
 };
