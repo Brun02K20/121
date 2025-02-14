@@ -3260,7 +3260,6 @@ export class Simulador {
                             // hay autos esperando en el continente
                             // busco el primer auto o camion que este esperando en el continente
                             let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_CONTINENTE && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                            console.log("auto a cargar en el continente por evento fin descarga auto f1", auto_a_cargar);
                             // en funcion del tipo de auto, calculo el tiempo de carga
                             if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
                                 // es camion
@@ -3315,7 +3314,6 @@ export class Simulador {
                             // hay autos esperando en la isla
                             // busco el primer auto o camion que este esperando en la isla
                             let auto_a_cargar = fila_actual.clientes.find(clte => clte.localizacion == Estaticas.L_ISLA && clte.estado == Estaticas.E_ESPERANDO_CARGA);
-                            console.log("auto a cargar en la isla por evento fin descarga auto f1", auto_a_cargar);
                             // en funcion del tipo de auto, calculo el tiempo de carga
                             if (auto_a_cargar.tipo == Estaticas.T_CAMION) {
                                 // es camion
@@ -3369,7 +3367,6 @@ export class Simulador {
                 // no era el ultimo auto en ser descargado
                 // buscar el siguiente auto a ser descargado
                 let siguiente_auto_a_descargar = fila_actual.clientes.find(clte => clte.ferry_id == 1 && clte.estado == Estaticas.E_ESPERANDO_DESCARGA);
-                console.log("auto a descargar en el continente por evento fin descarga auto f1", siguiente_auto_a_descargar);
                 if (siguiente_auto_a_descargar) {
                     // tengo que preguntar su tipo para saber cuanto tiempo tardara en ser descargado
                     if (siguiente_auto_a_descargar.tipo == Estaticas.T_CAMION) {
@@ -4910,6 +4907,7 @@ export class Simulador {
         console.log("cltes que esperan: ", fila_anterior.clientes.length)
 
         fila_anterior.acum_autos_esperan_hasta_dia_sgte += fila_anterior.clientes.length;
+        fila_anterior.promedio_autos_esperan_hasta_dia_sgte = fila_anterior.acum_autos_esperan_hasta_dia_sgte / fila_anterior.reloj_dias
         fila_actual.promedio_autos_esperan_hasta_dia_sgte = fila_anterior.acum_autos_esperan_hasta_dia_sgte / fila_anterior.reloj_dias
         fila_actual.acum_autos_esperan_hasta_dia_sgte = fila_anterior.acum_autos_esperan_hasta_dia_sgte;
 
