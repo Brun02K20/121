@@ -4541,7 +4541,7 @@ export class Simulador {
         try {
             let iteracion = 0
             let iteraciones_mostradas = 0;
-            while (this.array[this.array.length - 1].reloj_dias < 31) {
+            while (this.array[this.array.length - 1].reloj_dias < 32) {
                 iteracion += 1;
                 let estadoActual = this.array[this.array.length - 1];
                 let proximo_evento = this.determinar_proximo_evento(estadoActual);
