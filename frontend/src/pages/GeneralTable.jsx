@@ -60,8 +60,6 @@ const GeneralTable = ({ tabla }) => {
             <th colSpan={4}>Información del ferry 1</th>
             <th colSpan={4}>Información del ferry 2</th>
 
-            <th rowSpan={2}>Ult mant</th>
-
             <th colSpan={2}>Colas</th>
 
             <th colSpan={2}>Colas máximas</th>
@@ -238,8 +236,6 @@ const GeneralTable = ({ tabla }) => {
               <td>{fila.ferry_2.capacidad_restante}</td>
               <td>{fila.ferry_2.localizacion}</td>
               <td>{fila.ferry_2.ult_loc_tierra}</td>
-
-              <td>{fila.ultimo_mantenimiento}</td>
 
               <td>{fila.cola_continente}</td>
               <td>{fila.cola_isla}</td>
