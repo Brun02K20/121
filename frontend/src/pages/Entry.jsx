@@ -101,7 +101,7 @@ const Entry = ({ setRespuestas }) => {
             name="hora_inicio_muestra"
           />
           {errors.hora_inicio_muestra && (
-            <div className="text-danger">This field is required</div>
+            <div className="text-danger">{errors.hora_inicio_muestra.message}</div>
           )}
         </div>
         <button type="submit" className="btn btn-primary">
